@@ -44,15 +44,14 @@ const PatientProfile: React.FC = () => (
                             <Badge label="Paciente" variant="patient" />
                         </div>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2.5">
                         {personalFields.map((f) => (
                             <div
                                 key={f.label}
-                                className="px-3 py-2.5 rounded-lg"
-                                style={{ background: C.borderLight }}
+                                className="px-3 py-2.5 rounded-lg bg-gray-100"
                             >
                                 <div
-                                    className="text-[11px] font-semibold uppercase tracking-[0.04em] mb-0.5"
+                                    className="text-[11px] font-semibold uppercase tracking-[0.04em] mb-1"
                                     style={{ color: C.textMuted }}
                                 >
                                     {f.label}
