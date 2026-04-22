@@ -8,7 +8,7 @@ import ProgressBar from "@/components/ui/ProgressBar";
 import StatCard from "@/components/ui/StatCard";
 import Input from "@/components/ui/Input";
 import GenerateLinkCode from "@/components/doctor/GenerateLinkCode";
-import { C } from "@/lib/colors";
+import { C } from "@/lib/Colors";
 import { IcUsers, IcChart, IcBell, IcPill, IcLink, IcChevronR, IcSearch } from "@/components/ui/Icons";
 
 export interface DoctorPatient {
@@ -116,7 +116,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onSelectPatient }) =>
                         <IcBell size={18} color={C.coral} />
                         <div
                             className="font-bold text-[15px]"
-                            style={{ color: "oklch(0.40 0.15 25)" }}
+                            style={{ color: C.coralDark }}
                         >
                             Pacientes que requieren atención
                         </div>
@@ -131,7 +131,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onSelectPatient }) =>
                                     className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[10px] cursor-pointer flex-1"
                                     style={{
                                         background: C.surface,
-                                        border: `1px solid ${C.coral}44`,
+                                        border: `1px solid ${C.coral}`,
                                     }}
                                 >
                                     <Avatar name={p.full_name} size={36} color={C.coral} />
@@ -182,7 +182,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onSelectPatient }) =>
                                 className="flex items-center gap-3.5 px-3.5 py-3 rounded-[10px] cursor-pointer transition-colors duration-150"
                                 style={{
                                     background: p.alert ? C.coralLight : "transparent",
-                                    border: `1px solid ${p.alert ? C.coral + "33" : "transparent"}`,
+                                    border: `1px solid ${p.alert ? C.coral : "transparent"}`,
                                 }}
                                 onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
                                     if (!p.alert)
