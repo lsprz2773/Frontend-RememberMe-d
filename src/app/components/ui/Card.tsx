@@ -1,9 +1,18 @@
 import React from "react";
+import type { CardProps } from "@/types";
+import { C } from "@/lib/colors";
 
-const Card = ({ children, style, pad = 20, className }) => (
+const Card: React.FC<CardProps> = ({ children, style, pad = 20, className }) => (
     <div
-        className={`bg-white rounded-[14px] border border-gray-100 shadow-sm ${className ?? ""}`}
-        style={{ padding: pad, ...style }}
+        className={className}
+        style={{
+            background: C.surface,
+            borderRadius: 14,
+            border: `1px solid ${C.border}`,
+            padding: pad,
+            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            ...style,
+        }}
     >
         {children}
     </div>
