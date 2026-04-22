@@ -89,17 +89,17 @@ const PatientDashboard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-3 gap-3.5 mb-7">
-                <div className="px-5 py-4 rounded-[12px]" style={{ background: C.primaryLight }}>
-                    <div className="text-[28px] font-extrabold" style={{ color: C.primary }}>87%</div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: C.textMuted }}>Adherencia mensual</div>
+                <div className="px-5 py-5 rounded-[12px]" style={{ background: C.primaryLight, border: `1px solid ${C.primaryMid}` }}>
+                    <div className="text-[28px] font-extrabold leading-none" style={{ color: C.primary }}>87%</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wide mt-1.5" style={{ color: C.textMuted }}>Adherencia mensual</div>
                 </div>
-                <div className="px-5 py-4 rounded-[12px]" style={{ background: C.amberLight }}>
-                    <div className="text-[28px] font-extrabold" style={{ color: C.amber }}>{pending}</div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: C.textMuted }}>Tomas pendientes</div>
+                <div className="px-5 py-5 rounded-[12px]" style={{ background: C.amberLight, border: `1px solid ${C.amber}` }}>
+                    <div className="text-[28px] font-extrabold leading-none" style={{ color: C.amber }}>{pending}</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wide mt-1.5" style={{ color: C.textMuted }}>Tomas pendientes</div>
                 </div>
-                <div className="px-5 py-4 rounded-[12px]" style={{ background: C.borderLight }}>
-                    <div className="text-[28px] font-extrabold" style={{ color: C.text }}>5🔥</div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: C.textMuted }}>Días de racha</div>
+                <div className="px-5 py-5 rounded-[12px]" style={{ background: C.borderLight, border: `1px solid ${C.border}` }}>
+                    <div className="text-[28px] font-extrabold leading-none" style={{ color: C.text }}>5🔥</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wide mt-1.5" style={{ color: C.textMuted }}>Días de racha</div>
                 </div>
             </div>
 
@@ -118,20 +118,20 @@ const PatientDashboard: React.FC = () => {
                             return (
                                 <div
                                     key={t.id}
-                                    className="flex items-center justify-between px-3 py-2 rounded-lg gap-2"
+                                    className="flex items-center justify-between px-3.5 py-2.5 rounded-lg gap-3"
                                     style={{ background: s.bg }}
                                 >
                                     <div className="min-w-0 flex-1">
                                         <div className="text-[13px] font-semibold truncate" style={{ color: C.text }}>
                                             {t.medication}
                                         </div>
-                                        <div className="text-[11px]" style={{ color: C.textMuted }}>
+                                        <div className="text-[11px] mt-0.5" style={{ color: C.textMuted }}>
                                             {t.dosage} · {t.scheduled_time}
                                         </div>
                                     </div>
                                     <span
-                                        className="text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0"
-                                        style={{ background: s.bg, color: s.color }}
+                                        className="text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 bg-white"
+                                        style={{ color: s.color }}
                                     >
                     {s.label}
                   </span>
@@ -183,7 +183,7 @@ const PatientDashboard: React.FC = () => {
                             {recentSymptoms.map((s) => (
                                 <div
                                     key={s.id}
-                                    className="flex items-center justify-between px-3 py-2 rounded-lg gap-2"
+                                    className="flex items-center justify-between px-3.5 py-2.5 rounded-lg gap-3"
                                     style={{ background: s.high_severity_alert ? C.coralLight : C.borderLight }}
                                 >
                                     <div className="min-w-0 flex-1">
