@@ -2,10 +2,10 @@
 
 import React, { useState } from "react";
 import Card from "@/components/ui/Card";
-import Btn from "@/components/ui/Btn";
+import Btn from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ProgressBar from "@/components/ui/ProgressBar";
-import { C } from "@/lib/colors";
+import { C } from "@/lib/Colors";
 import { IcPlus, IcPill, IcCheck, IcTrash } from "@/components/ui/Icons";
 import type { DoctorPatient } from "@/components/doctor/Dashboard";
 

@@ -1,6 +1,6 @@
 import React from "react";
 import type { CardProps } from "@/types";
-import { C } from "@/lib/colors";
+import { C } from "@/lib/Colors";
 
 const Card: React.FC<CardProps> = ({ children, style, pad = 20, className }) => (
     <div

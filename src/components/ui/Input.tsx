@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import type { InputProps } from "@/types";
-import { C } from "@/lib/colors";
+import { C } from "@/lib/Colors";
 
 const Input: React.FC<InputProps> = ({
                                          label, placeholder, type = "text",

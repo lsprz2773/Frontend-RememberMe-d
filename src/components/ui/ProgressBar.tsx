@@ -1,6 +1,6 @@
 import React from "react";
 import type { ProgressBarProps } from "@/types";
-import { C } from "@/lib/colors";
+import { C } from "@/lib/Colors";
 
 const ProgressBar: React.FC<ProgressBarProps> = ({
                                                      value, max = 100, color, height = 6,

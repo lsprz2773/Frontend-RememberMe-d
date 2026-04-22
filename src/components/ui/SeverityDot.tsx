@@ -1,6 +1,6 @@
 import React from "react";
 import type { SeverityDotProps } from "@/types";
-import { C } from "@/lib/colors";
+import { C } from "@/lib/Colors";
 
 const SeverityDot: React.FC<SeverityDotProps> = ({ value }) => {
     const color =

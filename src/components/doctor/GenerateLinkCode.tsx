@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import Btn from "@/components/ui/Btn";
-import { C } from "@/lib/colors";
+import Btn from "@/components/ui/Button";
+import { C } from "@/lib/Colors";
 import { IcPlus } from "@/components/ui/Icons";
 
 const GenerateLinkCode: React.FC = () => {

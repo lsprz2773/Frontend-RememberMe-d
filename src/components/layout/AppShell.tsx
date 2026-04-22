@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
-import Sidebar from "@/app/";
+import React, { useState, useEffect } from "react";
+import Sidebar from "@/components/layout/Sidebar";
 import AuthScreen from "@/components/layout/AuthScreen";
 import DoctorDashboard from "@/components/doctor/Dashboard";
-import PatientDetail from "@/components/doctor/PatientDetail";
+import PatientDetail from "@/components/doctor/PatientDetails";
 import PatientDashboard from "@/components/patient/Dashboard";
 import PatientMedications from "@/components/patient/Medications";
 import PatientIntakes from "@/components/patient/Intakes";
 import PatientSymptoms from "@/components/patient/Symptoms";
 import PatientMyDoctor from "@/components/patient/MyDoctor";
 import PatientProfile from "@/components/patient/Profile";
-import { C } from "@/lib/colors";
+import { C } from "@/lib/Colors";
 import type { UserRole, AppShellProps } from "@/types";
 import type { DoctorPatient } from "@/types";
 
@@ -84,16 +84,21 @@ const AppShell: React.FC<AppShellProps> = ({ role, onLogout }) => {
 };
 
 export const App: React.FC = () => {
-    const [state, setState] = useState<Partial<AppState>>(() => {
+    const [state, setState] = useState<Partial<AppState>>({});
+    const [ready, setReady]  = useState(false);
+
+    useEffect(() => {
         try {
-            return JSON.parse(localStorage.getItem("rm_state") ?? "{}") as AppState;
+            const saved = JSON.parse(localStorage.getItem("rm_state") ?? "{}") as Partial<AppState>;
+            setState(saved);
         } catch {
-            return {};
+            // ignore
         }
-    });
+        setReady(true);
+    }, []);
 
     const login = (selectedRole: UserRole | null): void => {
-        const r: UserRole  = selectedRole ?? "PATIENT";
+        const r: UserRole        = selectedRole ?? "PATIENT";
         const newState: AppState = { authed: true, role: r };
         setState(newState);
         localStorage.setItem("rm_state", JSON.stringify(newState));
@@ -104,6 +109,7 @@ export const App: React.FC = () => {
         setState({});
     };
 
+    if (!ready) return null;
     if (!state.authed) return <AuthScreen onLogin={login} />;
     return <AppShell role={state.role as UserRole} onLogout={logout} />;
 };

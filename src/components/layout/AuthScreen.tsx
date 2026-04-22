@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import Input from "@/components/ui/Input";
-import Btn from "@/components/ui/Btn";
-import { C } from "@/lib/colors";
+import Btn from "@/components/ui/Button";
+import { C } from "@/lib/Colors";
 import { IcCheck, IcActivity, IcUsers, IcUser, IcPill } from "@/components/ui/Icons";
 import type { AuthScreenProps, UserRole } from "@/types";
 

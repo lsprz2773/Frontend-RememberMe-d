@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import type { BtnProps } from "@/types";
-import { C } from "@/lib/colors";
+import { C } from "@/lib/Colors";
 
 const Btn: React.FC<BtnProps> = ({
                                      children, variant = "primary", size = "md",
