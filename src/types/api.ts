@@ -78,3 +78,26 @@ export interface ApiMedicalProfile {
   created_at: string;
   updated_at: string;
 }
+
+export interface ApiLinkedPatient {
+  link_id: number;
+  patient_id: number;
+  full_name: string;
+  date_of_birth: string | null;
+  linked_at: string;
+  adherence_pct: number | null;
+  streak: number | null;
+  chronic_conditions: string | null;
+  high_severity_alert: boolean;
+  active_meds_count: number | null;
+  last_symptom_date: string | null;
+}
+
+export interface ApiMyDoctor {
+  link_id: number;
+  doctor_id: number;
+  full_name: string;
+  email: string;
+  linked_at: string;
+  status: LinkStatus;
+}

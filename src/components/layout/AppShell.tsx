@@ -55,7 +55,7 @@ const AppShell: React.FC<AppShellProps> = ({ role, userName, onLogout }) => {
         if (role === "DOCTOR") {
             switch (screen) {
                 case "dashboard":
-                    return <DoctorDashboard onSelectPatient={handleSelectPatient} />;
+                    return <DoctorDashboard onSelectPatient={handleSelectPatient} userName={userName} />;
                 case "patient-detail":
                     return <PatientDetail patient={selectedPatient} onBack={() => setScreen("dashboard")} />;
                 case "profile":

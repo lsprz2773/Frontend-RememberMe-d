@@ -185,6 +185,7 @@ export interface PatientDetailProps {
 
 export interface DoctorDashboardProps {
     onSelectPatient: (patient: DoctorPatient) => void;
+    userName?: string;
 }
 
 export interface MedsTabProps {

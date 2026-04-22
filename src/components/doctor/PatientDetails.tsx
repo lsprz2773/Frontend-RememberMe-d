@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Card from "@/components/ui/Card";
 import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
@@ -8,57 +8,86 @@ import SeverityDot from "@/components/ui/SeverityDot";
 import ProgressBar from "@/components/ui/ProgressBar";
 import MedsTab from "@/components/doctor/MedsTab";
 import { C } from "@/lib/Colors";
-import type { DoctorPatient } from "@/components/doctor/Dashboard";
+import type { DoctorPatient } from "@/types";
+import type { ApiSymptom } from "@/types/api";
 
 type DetailTab = "overview" | "meds" | "symptoms" | "profile";
-
-interface SymptomEntry {
-    id: number;
-    symptom_name: string;
-    severity: number;
-    notes: string;
-    entry_date: string;
-    high_severity_alert: boolean;
-}
 
 interface PatientDetailProps {
     patient: DoctorPatient | null;
     onBack: () => void;
 }
 
-const detailSymptoms: SymptomEntry[] = [
-    { id: 1, symptom_name: "Dolor abdominal", severity: 6, notes: "Leve, después de comer",      entry_date: "2026-04-22", high_severity_alert: false },
-    { id: 2, symptom_name: "Náusea",          severity: 4, notes: "Por la mañana",               entry_date: "2026-04-21", high_severity_alert: false },
-    { id: 3, symptom_name: "Mareo",           severity: 9, notes: "Episodio de 10 min",           entry_date: "2026-04-20", high_severity_alert: true  },
-    { id: 4, symptom_name: "Cefalea",         severity: 5, notes: "Tensional leve",               entry_date: "2026-04-19", high_severity_alert: false },
-    { id: 5, symptom_name: "Fatiga",          severity: 7, notes: "Cansancio desde el mediodía", entry_date: "2026-04-18", high_severity_alert: false },
-];
-
-const weeklyAdherence: number[] = [88, 100, 75, 100, 88, 63, 88];
-const weekDays: string[] = ["L", "M", "M", "J", "V", "S", "D"];
-
 const adColor = (pct: number): string =>
     pct >= 80 ? C.primary : pct >= 60 ? C.amber : C.coral;
 
 const tabs: Array<[DetailTab, string]> = [
-    ["overview", "Resumen"],
-    ["meds",     "Medicamentos"],
-    ["symptoms", "Síntomas"],
-    ["profile",  "Perfil clínico"],
+    ["overview",  "Resumen"],
+    ["meds",      "Medicamentos"],
+    ["symptoms",  "Síntomas"],
+    ["profile",   "Perfil clínico"],
 ];
 
 const profileFields = (patient: DoctorPatient) => [
     { l: "Nombre completo", v: patient.full_name },
-    { l: "Edad",            v: `${patient.age} años` },
+    { l: "Edad",            v: patient.age > 0 ? `${patient.age} años` : "No disponible" },
     { l: "Vinculado desde", v: patient.linked_at },
 ];
 
 const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
-    const [tab, setTab] = useState<DetailTab>("overview");
+    const [tab, setTab]           = useState<DetailTab>("overview");
+    const [symptoms, setSymptoms] = useState<ApiSymptom[]>([]);
+    const [loadingSymptoms, setLoadingSymptoms] = useState<boolean>(false);
+    const [symptomError, setSymptomError]       = useState<string>("");
+
+    useEffect(() => {
+        if (!patient || (tab !== "symptoms" && tab !== "overview")) return;
+        setLoadingSymptoms(true);
+        setSymptomError("");
+        const load = async (): Promise<void> => {
+            try {
+                const res  = await fetch(`/api/links/patients/${patient.id}/symptoms`);
+                const data = await res.json() as ApiSymptom[] | { error?: string };
+                if (!res.ok) throw new Error((data as { error?: string }).error ?? "Sin acceso a síntomas");
+                setSymptoms(data as ApiSymptom[]);
+            } catch (e) {
+                setSymptomError(e instanceof Error ? e.message : "Error al cargar síntomas");
+            } finally {
+                setLoadingSymptoms(false);
+            }
+        };
+        void load();
+    }, [patient, tab]);
 
     if (!patient) return null;
 
     const color = adColor(patient.adherence_pct);
+
+    const renderOverviewSymptoms = () => {
+        if (loadingSymptoms) return <div className="text-xs py-4 text-center" style={{ color: C.textMuted }}>Cargando…</div>;
+        if (symptoms.length === 0) return <div className="text-xs py-4 text-center" style={{ color: C.textMuted }}>Sin síntomas disponibles</div>;
+        return symptoms.slice(0, 4).map((s) => {
+            const isHigh = s.severity >= 8;
+            return (
+                <div
+                    key={s.id}
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-lg gap-3"
+                    style={{ background: isHigh ? C.coralLight : C.borderLight }}
+                >
+                    <div className="min-w-0 flex-1">
+                        <div className="text-[13px] font-semibold truncate" style={{ color: C.text }}>
+                            {s.symptom_name}
+                        </div>
+                        <div className="text-[11px]" style={{ color: C.textMuted }}>{s.entry_date}</div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        {isHigh && <Badge label="⚠" variant="alert" />}
+                        <SeverityDot value={s.severity} />
+                    </div>
+                </div>
+            );
+        });
+    };
 
     return (
         <div>
@@ -77,59 +106,39 @@ const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
                         size={60}
                         color={patient.alert ? C.coral : C.primary}
                     />
-
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2.5 mb-1 flex-wrap">
-                            <h2
-                                className="text-xl font-extrabold m-0 truncate"
-                                style={{ color: C.text }}
-                            >
+                            <h2 className="text-xl font-extrabold m-0 truncate" style={{ color: C.text }}>
                                 {patient.full_name}
                             </h2>
                             {patient.alert && (
                                 <span className="shrink-0">
-                  <Badge label="Requiere atención" variant="alert" dot />
-                </span>
+                                    <Badge label="Requiere atención" variant="alert" dot />
+                                </span>
                             )}
                             <span className="shrink-0">
-                <Badge label="Paciente" variant="patient" />
-              </span>
+                                <Badge label="Paciente" variant="patient" />
+                            </span>
                         </div>
                         <div className="text-sm truncate" style={{ color: C.textMuted }}>
                             {patient.conditions}
                         </div>
                         <div className="text-[13px]" style={{ color: C.textMuted }}>
-                            Vinculado desde {patient.linked_at} · {patient.age} años
+                            Vinculado desde {patient.linked_at}{patient.age > 0 ? ` · ${patient.age} años` : ""}
                         </div>
                     </div>
-
                     <div className="grid grid-cols-3 gap-3.5 text-center shrink-0">
-                        <div
-                            className="px-5 py-3 rounded-[10px]"
-                            style={{ background: color + "1a" }}
-                        >
-                            <div className="text-2xl font-extrabold" style={{ color }}>
-                                {patient.adherence_pct}%
-                            </div>
-                            <div className="text-[11px] font-semibold tracking-wide" style={{ color: C.textMuted }}>
-                                ADHERENCIA
-                            </div>
+                        <div className="px-5 py-3 rounded-[10px]" style={{ background: color + "1a" }}>
+                            <div className="text-2xl font-extrabold" style={{ color }}>{patient.adherence_pct}%</div>
+                            <div className="text-[11px] font-semibold tracking-wide" style={{ color: C.textMuted }}>ADHERENCIA</div>
                         </div>
                         <div className="px-5 py-3 rounded-[10px]" style={{ background: C.primaryLight }}>
-                            <div className="text-2xl font-extrabold" style={{ color: C.primary }}>
-                                {patient.streak}
-                            </div>
-                            <div className="text-[11px] font-semibold tracking-wide" style={{ color: C.textMuted }}>
-                                RACHA
-                            </div>
+                            <div className="text-2xl font-extrabold" style={{ color: C.primary }}>{patient.streak}</div>
+                            <div className="text-[11px] font-semibold tracking-wide" style={{ color: C.textMuted }}>RACHA</div>
                         </div>
                         <div className="px-5 py-3 rounded-[10px]" style={{ background: C.borderLight }}>
-                            <div className="text-2xl font-extrabold" style={{ color: C.text }}>
-                                {patient.meds}
-                            </div>
-                            <div className="text-[11px] font-semibold tracking-wide" style={{ color: C.textMuted }}>
-                                MEDICAMENTOS
-                            </div>
+                            <div className="text-2xl font-extrabold" style={{ color: C.text }}>{patient.meds}</div>
+                            <div className="text-[11px] font-semibold tracking-wide" style={{ color: C.textMuted }}>MEDICAMENTOS</div>
                         </div>
                     </div>
                 </div>
@@ -159,29 +168,18 @@ const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
                 <div className="grid grid-cols-2 gap-5">
                     <Card>
                         <div className="font-bold text-[15px] mb-4" style={{ color: C.text }}>
-                            Adherencia últimos 7 días
+                            Adherencia general
                         </div>
-                        <div className="flex items-end gap-2 h-20 mb-3">
-                            {weeklyAdherence.map((v, i) => (
-                                <div key={i} className="flex-1 flex flex-col items-center gap-[3px]">
-                                    <div
-                                        className="w-full rounded-t-[3px]"
-                                        style={{
-                                            background: v >= 80 ? C.primary : C.amber,
-                                            height: `${(v / 100) * 70}px`,
-                                            minHeight: 4,
-                                        }}
-                                    />
-                                    <div className="text-[10px]" style={{ color: C.textMuted }}>
-                                        {weekDays[i]}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <ProgressBar value={patient.adherence_pct} max={100} color={color} height={8} />
-                        <div className="text-xs mt-1.5" style={{ color: C.textMuted }}>
-                            Promedio:{" "}
-                            <strong style={{ color }}>{patient.adherence_pct}%</strong>
+                        <div className="flex flex-col gap-3">
+                            <div className="flex justify-between items-center text-sm">
+                                <span style={{ color: C.textMuted }}>Porcentaje de adherencia</span>
+                                <span className="font-extrabold text-lg" style={{ color }}>{patient.adherence_pct}%</span>
+                            </div>
+                            <ProgressBar value={patient.adherence_pct} max={100} color={color} height={10} />
+                            <div className="flex justify-between text-xs" style={{ color: C.textMuted }}>
+                                <span>Racha actual: <strong style={{ color: C.primary }}>{patient.streak} días</strong></span>
+                                <span>Último síntoma: {patient.last_symptom}</span>
+                            </div>
                         </div>
                     </Card>
 
@@ -190,26 +188,7 @@ const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
                             Síntomas recientes
                         </div>
                         <div className="flex flex-col gap-2">
-                            {detailSymptoms.slice(0, 4).map((s) => (
-                                <div
-                                    key={s.id}
-                                    className="flex items-center justify-between px-3.5 py-2.5 rounded-lg gap-3"
-                                    style={{ background: s.high_severity_alert ? C.coralLight : C.borderLight }}
-                                >
-                                    <div className="min-w-0 flex-1">
-                                        <div className="text-[13px] font-semibold truncate" style={{ color: C.text }}>
-                                            {s.symptom_name}
-                                        </div>
-                                        <div className="text-[11px]" style={{ color: C.textMuted }}>
-                                            {s.entry_date}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                        {s.high_severity_alert && <Badge label="⚠" variant="alert" />}
-                                        <SeverityDot value={s.severity} />
-                                    </div>
-                                </div>
-                            ))}
+                            {renderOverviewSymptoms()}
                         </div>
                     </Card>
                 </div>
@@ -218,42 +197,56 @@ const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
             {tab === "meds" && <MedsTab patient={patient} />}
 
             {tab === "symptoms" && (
-                <div className="flex flex-col gap-2.5">
-                    {detailSymptoms.map((s) => (
-                        <Card
-                            key={s.id}
-                            pad={16}
-                            style={{
-                                borderLeft: s.high_severity_alert
-                                    ? `4px solid ${C.coral}`
-                                    : "4px solid transparent",
-                            }}
-                        >
-                            <div className="flex items-center gap-3.5">
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-[15px] font-bold truncate" style={{ color: C.text }}>
-                      {s.symptom_name}
-                    </span>
-                                        {s.high_severity_alert && (
-                                            <span className="shrink-0">
-                        <Badge label="Alta severidad" variant="alert" dot />
-                      </span>
-                                        )}
-                                    </div>
-                                    <div className="text-[13px]" style={{ color: C.textMuted }}>
-                                        {s.notes}
-                                    </div>
-                                </div>
-                                <div className="text-right shrink-0">
-                                    <SeverityDot value={s.severity} />
-                                    <div className="text-xs mt-1" style={{ color: C.textMuted }}>
-                                        {s.entry_date}
-                                    </div>
-                                </div>
-                            </div>
-                        </Card>
-                    ))}
+                <div>
+                    {loadingSymptoms && (
+                        <div className="text-sm py-10 text-center" style={{ color: C.textMuted }}>Cargando síntomas…</div>
+                    )}
+                    {!loadingSymptoms && symptomError && (
+                        <div className="text-sm py-10 text-center" style={{ color: C.coral }}>
+                            {symptomError}
+                        </div>
+                    )}
+                    {!loadingSymptoms && !symptomError && symptoms.length === 0 && (
+                        <div className="text-sm py-10 text-center" style={{ color: C.textMuted }}>
+                            No hay síntomas registrados para este paciente.
+                        </div>
+                    )}
+                    {!loadingSymptoms && symptoms.length > 0 && (
+                        <div className="flex flex-col gap-2.5">
+                            {symptoms.map((s) => {
+                                const isHigh = s.severity >= 8;
+                                return (
+                                    <Card
+                                        key={s.id}
+                                        pad={16}
+                                        style={{ borderLeft: isHigh ? `4px solid ${C.coral}` : "4px solid transparent" }}
+                                    >
+                                        <div className="flex items-center gap-3.5">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                    <span className="text-[15px] font-bold truncate" style={{ color: C.text }}>
+                                                        {s.symptom_name}
+                                                    </span>
+                                                    {isHigh && (
+                                                        <span className="shrink-0">
+                                                            <Badge label="Alta severidad" variant="alert" dot />
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="text-[13px]" style={{ color: C.textMuted }}>
+                                                    {s.notes ?? ""}
+                                                </div>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <SeverityDot value={s.severity} />
+                                                <div className="text-xs mt-1" style={{ color: C.textMuted }}>{s.entry_date}</div>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -264,19 +257,14 @@ const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
                             Información personal
                         </div>
                         {profileFields(patient).map((f) => (
-                            <div
-                                key={f.l}
-                                className="px-3.5 py-3 rounded-lg mb-2 bg-gray-100"
-                            >
+                            <div key={f.l} className="px-3.5 py-3 rounded-lg mb-2 bg-gray-100">
                                 <div
                                     className="text-[11px] font-semibold uppercase tracking-[0.04em] mb-1"
                                     style={{ color: C.textMuted }}
                                 >
                                     {f.l}
                                 </div>
-                                <div className="text-sm font-semibold" style={{ color: C.text }}>
-                                    {f.v}
-                                </div>
+                                <div className="text-sm font-semibold" style={{ color: C.text }}>{f.v}</div>
                             </div>
                         ))}
                     </Card>
@@ -285,22 +273,6 @@ const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
                         <div className="font-bold text-[15px] mb-4" style={{ color: C.text }}>
                             Perfil clínico
                         </div>
-
-                        <div
-                            className="px-3.5 py-3 rounded-lg mb-2.5"
-                            style={{ background: C.coralLight, borderLeft: `3px solid ${C.coral}` }}
-                        >
-                            <div
-                                className="text-[11px] font-bold uppercase tracking-[0.04em] mb-1"
-                                style={{ color: C.coralDark }}
-                            >
-                                Alergias
-                            </div>
-                            <div className="text-sm" style={{ color: C.text }}>
-                                Penicilina, Aspirina
-                            </div>
-                        </div>
-
                         <div
                             className="px-3.5 py-3 rounded-lg mb-2.5"
                             style={{ background: C.amberLight, borderLeft: `3px solid ${C.amber}` }}
@@ -315,19 +287,18 @@ const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
                                 {patient.conditions}
                             </div>
                         </div>
-
                         <div
                             className="px-3.5 py-3 rounded-lg"
-                            style={{ background: C.primaryLight, borderLeft: `3px solid ${C.primary}` }}
+                            style={{ background: C.borderLight }}
                         >
                             <div
                                 className="text-[11px] font-bold uppercase tracking-[0.04em] mb-1"
-                                style={{ color: C.primaryDark }}
+                                style={{ color: C.textMuted }}
                             >
-                                Contacto de emergencia
+                                Alergias y contacto de emergencia
                             </div>
-                            <div className="text-sm" style={{ color: C.text }}>
-                                María López · +52 961 765 4321
+                            <div className="text-sm" style={{ color: C.textMuted }}>
+                                No disponible — el paciente debe completar su perfil médico.
                             </div>
                         </div>
                     </Card>

@@ -23,6 +23,7 @@ const severityColor = (v: number): string =>
 const PatientSymptoms: React.FC = () => {
     const [showForm, setShowForm] = useState<boolean>(false);
     const [list, setList]         = useState<ApiSymptom[]>([]);
+    const [loading, setLoading]   = useState<boolean>(true);
     const [saving, setSaving]     = useState<boolean>(false);
     const [saveError, setSaveError] = useState<string>("");
     const [form, setForm]         = useState<NewSymptomForm>({
@@ -30,6 +31,23 @@ const PatientSymptoms: React.FC = () => {
         date: new Date().toISOString().slice(0, 10),
         notes: "",
     });
+
+    React.useEffect(() => {
+        const load = async (): Promise<void> => {
+            try {
+                const res = await fetch("/api/symptoms");
+                if (res.ok) {
+                    const data = await res.json() as ApiSymptom[];
+                    setList(data);
+                }
+            } catch {
+                // no GET endpoint or network error — start empty, still allow POST
+            } finally {
+                setLoading(false);
+            }
+        };
+        void load();
+    }, []);
 
     const save = async (): Promise<void> => {
         if (!form.name.trim()) return;
@@ -181,9 +199,13 @@ const PatientSymptoms: React.FC = () => {
                 </Card>
             )}
 
-            {list.length === 0 ? (
+            {loading ? (
                 <div className="text-sm text-center py-12" style={{ color: C.textMuted }}>
-                    Aún no has registrado síntomas en esta sesión.
+                    Cargando síntomas…
+                </div>
+            ) : list.length === 0 ? (
+                <div className="text-sm text-center py-12" style={{ color: C.textMuted }}>
+                    Aún no has registrado síntomas.
                     <br />Usa el botón de arriba para registrar uno.
                 </div>
             ) : (

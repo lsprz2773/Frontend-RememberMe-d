@@ -7,7 +7,7 @@ import Input from "@/components/ui/Input";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { C } from "@/lib/Colors";
 import { IcPlus, IcPill, IcCheck, IcTrash } from "@/components/ui/Icons";
-import type { DoctorPatient } from "@/components/doctor/Dashboard";
+import type { DoctorPatient } from "@/types";
 
 type MedSource = "doctor" | "patient";
 
@@ -35,12 +35,6 @@ interface MedsTabProps {
     patient: DoctorPatient;
 }
 
-const initialDetailMeds: DetailMedication[] = [
-    { id: 1, name: "Metformina",  dosage: "850mg", freq: 12, taken: 18, total: 22, is_active: true, source: "doctor"  },
-    { id: 2, name: "Lisinopril",  dosage: "10mg",  freq: 24, taken: 14, total: 16, is_active: true, source: "doctor"  },
-    { id: 3, name: "Paracetamol", dosage: "500mg", freq: 8,  taken: 5,  total: 6,  is_active: true, source: "patient" },
-];
-
 const freqOptions: [string, string][] = [
     ["4",  "Cada 4h"],
     ["6",  "Cada 6h"],
@@ -50,11 +44,12 @@ const freqOptions: [string, string][] = [
 ];
 
 const MedsTab: React.FC<MedsTabProps> = ({ patient }) => {
-    const [meds, setMeds]         = useState<DetailMedication[]>(initialDetailMeds);
+    const [meds, setMeds]         = useState<DetailMedication[]>([]);
     const [showForm, setShowForm] = useState<boolean>(false);
     const [form, setForm]         = useState<PrescribeForm>({
         name: "", dosage: "", freq: "8",
-        start: "2026-04-22", end: "", instructions: "",
+        start: new Date().toISOString().slice(0, 10),
+        end: "", instructions: "",
     });
 
     const set =
@@ -77,7 +72,11 @@ const MedsTab: React.FC<MedsTabProps> = ({ patient }) => {
             source: "doctor",
         };
         setMeds((prev) => [newMed, ...prev]);
-        setForm({ name: "", dosage: "", freq: "8", start: "2026-04-22", end: "", instructions: "" });
+        setForm({
+            name: "", dosage: "", freq: "8",
+            start: new Date().toISOString().slice(0, 10),
+            end: "", instructions: "",
+        });
         setShowForm(false);
     };
 
@@ -91,8 +90,8 @@ const MedsTab: React.FC<MedsTabProps> = ({ patient }) => {
                 <div className="text-[15px] font-bold" style={{ color: C.text }}>
                     Medicamentos del paciente
                     <span className="text-[13px] font-normal ml-2" style={{ color: C.textMuted }}>
-            {meds.filter((m) => m.is_active).length} activos
-          </span>
+                        {meds.filter((m) => m.is_active).length} activos esta sesión
+                    </span>
                 </div>
                 <Btn icon={<IcPlus size={16} />} onClick={() => setShowForm(!showForm)}>
                     Prescribir medicamento
@@ -102,10 +101,7 @@ const MedsTab: React.FC<MedsTabProps> = ({ patient }) => {
             {showForm && (
                 <Card
                     className="mb-4"
-                    style={{
-                        borderLeft: `4px solid ${C.primary}`,
-                        background: C.primaryLight,
-                    }}
+                    style={{ borderLeft: `4px solid ${C.primary}`, background: C.primaryLight }}
                 >
                     <div className="font-bold text-sm mb-3.5" style={{ color: C.primaryDark }}>
                         Nueva prescripción para {patient.full_name}
@@ -163,7 +159,14 @@ const MedsTab: React.FC<MedsTabProps> = ({ patient }) => {
                         onChange={set("instructions")}
                     />
 
-                    <div className="flex gap-2.5 mt-3.5">
+                    <div
+                        className="mt-3 px-3 py-2 rounded-lg text-[12px]"
+                        style={{ background: C.amberLight, color: C.amberDark }}
+                    >
+                        Las prescripciones son locales a esta sesión y no se envían al paciente en esta versión.
+                    </div>
+
+                    <div className="flex gap-2.5 mt-3">
                         <Btn icon={<IcCheck size={16} />} onClick={prescribe}>
                             Guardar prescripción
                         </Btn>
@@ -172,6 +175,13 @@ const MedsTab: React.FC<MedsTabProps> = ({ patient }) => {
                         </Btn>
                     </div>
                 </Card>
+            )}
+
+            {meds.length === 0 && !showForm && (
+                <div className="text-sm py-10 text-center" style={{ color: C.textMuted }}>
+                    No hay medicamentos en esta sesión.
+                    <br />Las prescripciones previas del paciente no están disponibles en esta vista.
+                </div>
             )}
 
             <div className="flex flex-col gap-3">
@@ -199,31 +209,19 @@ const MedsTab: React.FC<MedsTabProps> = ({ patient }) => {
 
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-[3px]">
-                    <span className="text-[15px] font-bold" style={{ color: C.text }}>
-                      {m.name}
-                    </span>
-                                        <span className="text-sm font-normal" style={{ color: C.textMuted }}>
-                      {m.dosage}
-                    </span>
+                                        <span className="text-[15px] font-bold" style={{ color: C.text }}>{m.name}</span>
+                                        <span className="text-sm font-normal" style={{ color: C.textMuted }}>{m.dosage}</span>
                                         {isRx ? (
-                                            <span
-                                                className="text-[11px] font-extrabold px-2 py-0.5 rounded-full"
-                                                style={{ background: C.primaryLight, color: C.primaryDark }}
-                                            >
-                        Rx
-                      </span>
+                                            <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: C.primaryLight, color: C.primaryDark }}>
+                                                Rx
+                                            </span>
                                         ) : (
-                                            <span
-                                                className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                                                style={{ background: C.violetLight, color: C.violet }}
-                                            >
-                        Propio
-                      </span>
+                                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: C.violetLight, color: C.violet }}>
+                                                Propio
+                                            </span>
                                         )}
                                     </div>
-                                    <div className="text-[13px]" style={{ color: C.textMuted }}>
-                                        Cada {m.freq}h
-                                    </div>
+                                    <div className="text-[13px]" style={{ color: C.textMuted }}>Cada {m.freq}h</div>
                                 </div>
 
                                 <div className="text-right min-w-[150px] shrink-0">
@@ -235,12 +233,7 @@ const MedsTab: React.FC<MedsTabProps> = ({ patient }) => {
                                 </div>
 
                                 {isRx && (
-                                    <Btn
-                                        variant="ghost"
-                                        size="sm"
-                                        icon={<IcTrash size={14} />}
-                                        onClick={() => removeMed(m.id)}
-                                    >
+                                    <Btn variant="ghost" size="sm" icon={<IcTrash size={14} />} onClick={() => removeMed(m.id)}>
                                         {" "}
                                     </Btn>
                                 )}
