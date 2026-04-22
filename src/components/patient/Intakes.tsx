@@ -91,7 +91,7 @@ const PatientIntakes: React.FC = () => {
                     ] as const).map((s) => (
                         <div key={s.label} className="text-center">
                             <div className="text-2xl font-extrabold" style={{ color: s.color }}>{s.count}</div>
-                            <div className="text-[11px] font-semibold" style={{ color: C.textMuted }}>{s.label}</div>
+                            <div className="text-[11px] font-semibold mt-1" style={{ color: C.textMuted }}>{s.label}</div>
                         </div>
                     ))}
                 </div>
@@ -111,7 +111,7 @@ const PatientIntakes: React.FC = () => {
                                     {hour}
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-2 flex-1 relative">
+                            <div className="flex flex-col gap-2.5 flex-1 relative">
                                 <div
                                     className="absolute left-0 top-0 bottom-0 w-0.5 -ml-2"
                                     style={{ background: allTaken ? C.primary : C.borderLight }}
@@ -132,9 +132,9 @@ const PatientIntakes: React.FC = () => {
                                                 <div className="text-sm font-bold truncate" style={{ color: C.text }}>
                                                     {t.medication}
                                                 </div>
-                                                <div className="text-[12px]" style={{ color: C.textMuted }}>{t.dosage}</div>
+                                                <div className="text-[12px] mb-1" style={{ color: C.textMuted }}>{t.dosage}</div>
                                                 {t.status === "taken" && (
-                                                    <div className="text-[11px] font-semibold mt-0.5" style={{ color: C.primary }}>
+                                                    <div className="text-[11px] font-semibold" style={{ color: C.primary }}>
                                                         ✓ Registrado a las {t.taken_at}
                                                     </div>
                                                 )}
