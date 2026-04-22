@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import Card from "@/components/ui/Card";
-import Btn from "@/components/ui/Btn";
+import Btn from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ProgressBar from "@/components/ui/ProgressBar";
 import PageHeader from "@/components/ui/PageHeader";
-import { C } from "@/lib/colors";
+import { C } from "@/lib/Colors";
 import { IcPill, IcPlus, IcSearch, IcEdit, IcTrash } from "@/components/ui/Icons";
 import type { Medication } from "@/types";
 
@@ -60,10 +60,10 @@ const PatientMedications: React.FC = () => {
                     <button
                         key={f}
                         onClick={() => setFilter(f)}
-                        className="px-4 py-[9px] rounded-lg text-[13px] font-semibold cursor-pointer transition-all duration-150"
+                        className={`px-4 py-[9px] rounded-lg text-[13px] font-semibold cursor-pointer transition-all duration-150${filter !== f ? " bg-white" : ""}`}
                         style={{
                             border:     `1.5px solid ${filter === f ? C.primary : C.border}`,
-                            background:  filter === f ? C.primaryLight : C.surface,
+                            background:  filter === f ? C.primaryLight : undefined,
                             color:       filter === f ? C.primary      : C.textMuted,
                         }}
                     >
@@ -108,7 +108,7 @@ const PatientMedications: React.FC = () => {
                                         <IcPill size={22} />
                                     </div>
                                     <div className="min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                        <div className="flex items-center gap-2 flex-wrap mb-1">
                                             <span className="text-[15px] font-bold" style={{ color: C.text }}>{m.name}</span>
                                             {isRx ? (
                                                 <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: C.primaryLight, color: C.primaryDark }}>Rx</span>
@@ -116,7 +116,7 @@ const PatientMedications: React.FC = () => {
                                                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: C.violetLight, color: C.violet }}>Propio</span>
                                             )}
                                             {!m.is_active && (
-                                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: C.borderLight, color: C.textMuted }}>Inactivo</span>
+                                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100" style={{ color: C.textMuted }}>Inactivo</span>
                                             )}
                                         </div>
                                         <div className="text-[13px]" style={{ color: C.textMuted }}>
@@ -128,8 +128,8 @@ const PatientMedications: React.FC = () => {
                             </div>
 
                             <div
-                                className="flex items-start gap-2 px-3 py-2 rounded-lg mb-3 text-[13px]"
-                                style={{ background: C.borderLight, color: C.textMuted }}
+                                className="flex items-start gap-2 px-3 py-2 rounded-lg mb-3 text-[13px] bg-gray-100"
+                                style={{ color: C.textMuted }}
                             >
                                 <span>📋</span>
                                 <span>{m.instructions}</span>
