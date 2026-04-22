@@ -8,18 +8,14 @@
 }
 
 @theme {
-    --font-sans: "Nunito", sans-serif;
+    --font-sans: var(--font-nunito);
 }
 
 html, body {
     height: 100%;
-    font-family: 'Nunito', sans-serif;
     background: #F8FAFC;
     color: #111827;
-    -webkit-font-smoothing: antialiased;
 }
-
-#root { height: 100%; }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
