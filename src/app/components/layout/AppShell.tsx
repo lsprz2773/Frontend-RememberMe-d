@@ -1,31 +1,60 @@
+// components/layout/AppShell.tsx
 "use client";
 
 import React, { useState } from "react";
+import Sidebar from "@/components/layout/Sidebar";
+import AuthScreen from "@/components/layout/AuthScreen";
+import DoctorDashboard, { type DoctorPatient } from "@/components/doctor/Dashboard";
+import PatientDetail from "@/components/doctor/PatientDetail";
+import PatientDashboard from "@/components/patient/Dashboard";
+import PatientMedications from "@/components/patient/Medications";
+import PatientIntakes from "@/components/patient/Intakes";
+import PatientSymptoms from "@/components/patient/Symptoms";
+import PatientMyDoctor from "@/components/patient/MyDoctor";
+import PatientProfile from "@/components/patient/Profile";
+import { C } from "@/lib/colors";
 
-const AppShell = ({ role, onLogout }) => {
-    const [screen, setScreen] = useState("dashboard");
-    const [selectedPatient, setSelectedPatient] = useState(null);
+export type UserRole = "PATIENT" | "DOCTOR";
 
-    const handleSelectPatient = (p) => {
+type Screen =
+    | "dashboard" | "medications" | "intakes"
+    | "symptoms"  | "doctor"      | "profile"
+    | "patients"  | "patient-detail";
+
+interface AppState {
+    authed: boolean;
+    role: UserRole;
+}
+
+interface AppShellProps {
+    role: UserRole;
+    onLogout: () => void;
+}
+
+const AppShell: React.FC<AppShellProps> = ({ role, onLogout }) => {
+    const [screen, setScreen]                   = useState<Screen>("dashboard");
+    const [selectedPatient, setSelectedPatient] = useState<DoctorPatient | null>(null);
+
+    const handleSelectPatient = (p: DoctorPatient): void => {
         setSelectedPatient(p);
         setScreen("patient-detail");
     };
 
-    const handleNav = (id) => {
+    const handleNav = (id: string): void => {
         setSelectedPatient(null);
-        setScreen(id);
+        setScreen(id as Screen);
     };
 
-    const renderContent = () => {
+    const renderContent = (): React.ReactNode => {
         if (role === "PATIENT") {
             switch (screen) {
-                case "dashboard":   return <div>PatientDashboard</div>;
-                case "medications": return <div>PatientMedications</div>;
-                case "intakes":     return <div>PatientIntakes</div>;
-                case "symptoms":    return <div>PatientSymptoms</div>;
-                case "doctor":      return <div>PatientMyDoctor</div>;
-                case "profile":     return <div>PatientProfile</div>;
-                default:            return <div>PatientDashboard</div>;
+                case "dashboard":   return <PatientDashboard />;
+                case "medications": return <PatientMedications />;
+                case "intakes":     return <PatientIntakes />;
+                case "symptoms":    return <PatientSymptoms />;
+                case "doctor":      return <PatientMyDoctor />;
+                case "profile":     return <PatientProfile />;
+                default:            return <PatientDashboard />;
             }
         }
 
@@ -33,13 +62,13 @@ const AppShell = ({ role, onLogout }) => {
             switch (screen) {
                 case "dashboard":
                 case "patients":
-                    return <div>DoctorDashboard</div>;
+                    return <DoctorDashboard onSelectPatient={handleSelectPatient} />;
                 case "patient-detail":
-                    return <div>PatientDetail</div>;
+                    return <PatientDetail patient={selectedPatient} onBack={() => setScreen("dashboard")} />;
                 case "profile":
-                    return <div>PatientProfile</div>;
+                    return <PatientProfile />;
                 default:
-                    return <div>DoctorDashboard</div>;
+                    return <DoctorDashboard onSelectPatient={handleSelectPatient} />;
             }
         }
 
@@ -47,40 +76,44 @@ const AppShell = ({ role, onLogout }) => {
     };
 
     return (
-        <div className="flex min-h-screen bg-gray-50 font-[Nunito,sans-serif]">
-            <div className="w-[240px] shrink-0">
-                {/* Sidebar */}
-            </div>
-            <main className="flex-1 min-h-screen overflow-x-hidden ml-[240px] px-9 py-8">
+        <div
+            className="flex min-h-screen"
+            style={{ background: C.bg, fontFamily: "Nunito, sans-serif" }}
+        >
+            <Sidebar role={role} active={screen} onNav={handleNav} onLogout={onLogout} />
+            <main
+                className="flex-1 min-h-screen overflow-x-hidden"
+                style={{ marginLeft: 240, padding: "32px 36px" }}
+            >
                 {renderContent()}
             </main>
         </div>
     );
 };
 
-const App = () => {
-    const [state, setState] = useState(() => {
+const App: React.FC = () => {
+    const [state, setState] = useState<Partial<AppState>>(() => {
         try {
-            return JSON.parse(localStorage.getItem("rm_state") ?? "{}");
+            return JSON.parse(localStorage.getItem("rm_state") ?? "{}") as AppState;
         } catch {
             return {};
         }
     });
 
-    const login = (selectedRole) => {
-        const r = selectedRole ?? "PATIENT";
-        const newState = { authed: true, role: r };
+    const login = (selectedRole: UserRole | null): void => {
+        const r: UserRole = selectedRole ?? "PATIENT";
+        const newState: AppState = { authed: true, role: r };
         setState(newState);
         localStorage.setItem("rm_state", JSON.stringify(newState));
     };
 
-    const logout = () => {
+    const logout = (): void => {
         localStorage.removeItem("rm_state");
         setState({});
     };
 
-    if (!state.authed) return <div className="min-h-screen bg-gray-50">AuthScreen</div>;
-    return <AppShell role={state.role} onLogout={logout} />;
+    if (!state.authed) return <AuthScreen onLogin={login} />;
+    return <AppShell role={state.role as UserRole} onLogout={logout} />;
 };
 
 export { App };
