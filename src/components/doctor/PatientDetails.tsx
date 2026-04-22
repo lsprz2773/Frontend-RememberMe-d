@@ -193,7 +193,7 @@ const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
                             {detailSymptoms.slice(0, 4).map((s) => (
                                 <div
                                     key={s.id}
-                                    className="flex items-center justify-between px-3 py-2 rounded-lg gap-2"
+                                    className="flex items-center justify-between px-3.5 py-2.5 rounded-lg gap-3"
                                     style={{ background: s.high_severity_alert ? C.coralLight : C.borderLight }}
                                 >
                                     <div className="min-w-0 flex-1">
@@ -266,11 +266,10 @@ const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
                         {profileFields(patient).map((f) => (
                             <div
                                 key={f.l}
-                                className="px-3 py-2.5 rounded-lg mb-2"
-                                style={{ background: C.borderLight }}
+                                className="px-3.5 py-3 rounded-lg mb-2 bg-gray-100"
                             >
                                 <div
-                                    className="text-[11px] font-semibold uppercase tracking-[0.04em] mb-0.5"
+                                    className="text-[11px] font-semibold uppercase tracking-[0.04em] mb-1"
                                     style={{ color: C.textMuted }}
                                 >
                                     {f.l}
