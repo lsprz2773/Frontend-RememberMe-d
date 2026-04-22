@@ -4,20 +4,29 @@ import React, { useState } from "react";
 import Btn from "@/components/ui/Button";
 import { C } from "@/lib/Colors";
 import { IcPlus } from "@/components/ui/Icons";
+import type { ApiDoctorPatientLink } from "@/types/api";
 
 const GenerateLinkCode: React.FC = () => {
-    const [code, setCode] = useState<string | null>(null);
+    const [link, setLink]       = useState<ApiDoctorPatientLink | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError]     = useState<string>("");
 
-    const generate = (): void => {
-        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        const newCode = Array.from(
-            { length: 6 },
-            () => chars[Math.floor(Math.random() * chars.length)]
-        ).join("");
-        setCode(newCode);
+    const generate = async (): Promise<void> => {
+        setLoading(true);
+        setError("");
+        try {
+            const res = await fetch("/api/links/generate", { method: "POST" });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? "Error al generar código");
+            setLink(data as ApiDoctorPatientLink);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Error al generar código");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    if (code) {
+    if (link) {
         return (
             <div>
                 <div
@@ -37,26 +46,35 @@ const GenerateLinkCode: React.FC = () => {
                         className="text-[32px] font-black tracking-[0.2em]"
                         style={{ color: C.violet }}
                     >
-                        {code}
+                        {link.link_code}
                     </div>
-                    <div
-                        className="text-[11px] mt-1.5"
-                        style={{ color: C.textMuted }}
-                    >
+                    <div className="text-[11px] mt-1.5" style={{ color: C.textMuted }}>
                         Expira en 24 horas
                     </div>
                 </div>
-                <Btn variant="ghost" full size="sm" onClick={() => setCode(null)}>
-                    Generar nuevo código
+                {error && (
+                    <div className="mb-2 px-3 py-2 rounded-lg text-[13px] font-semibold" style={{ background: C.coralLight, color: C.coralDark }}>
+                        {error}
+                    </div>
+                )}
+                <Btn variant="ghost" full size="sm" disabled={loading} onClick={() => void generate()}>
+                    {loading ? "Generando…" : "Generar nuevo código"}
                 </Btn>
             </div>
         );
     }
 
     return (
-        <Btn full icon={<IcPlus size={16} />} onClick={generate}>
-            Generar código
-        </Btn>
+        <>
+            {error && (
+                <div className="mb-2 px-3 py-2 rounded-lg text-[13px] font-semibold" style={{ background: C.coralLight, color: C.coralDark }}>
+                    {error}
+                </div>
+            )}
+            <Btn full icon={<IcPlus size={16} />} disabled={loading} onClick={() => void generate()}>
+                {loading ? "Generando…" : "Generar código"}
+            </Btn>
+        </>
     );
 };
 

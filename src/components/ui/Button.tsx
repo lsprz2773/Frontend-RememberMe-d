@@ -6,7 +6,7 @@ import { C } from "@/lib/Colors";
 
 const Btn: React.FC<BtnProps> = ({
                                      children, variant = "primary", size = "md",
-                                     onClick, icon, full, style, className,
+                                     onClick, icon, full, style, className, disabled,
                                  }) => {
     const [hov, setHov] = useState<boolean>(false);
 
@@ -28,16 +28,18 @@ const Btn: React.FC<BtnProps> = ({
         <button
             onClick={onClick}
             className={className}
+            disabled={disabled}
             onMouseEnter={() => setHov(true)}
             onMouseLeave={() => setHov(false)}
             style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
                 fontFamily: "Nunito, sans-serif", fontWeight: 600,
-                border: "none", cursor: "pointer",
+                border: "none", cursor: disabled ? "not-allowed" : "pointer",
                 transition: "all .18s ease", borderRadius: 8,
                 whiteSpace: "nowrap",
                 width: full ? "100%" : undefined,
                 justifyContent: full ? "center" : undefined,
+                opacity: disabled ? 0.55 : 1,
                 ...sizes[size],
                 ...variants[variant],
                 ...style,

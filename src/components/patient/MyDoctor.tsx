@@ -3,42 +3,43 @@
 import React, { useState } from "react";
 import Card from "@/components/ui/Card";
 import Btn from "@/components/ui/Button";
-import Avatar from "@/components/ui/Avatar";
 import Input from "@/components/ui/Input";
 import { C } from "@/lib/Colors";
 import { IcCheck, IcLink } from "@/components/ui/Icons";
 
-interface DoctorLink {
-    doctor_id: number;
-    full_name: string;
-    specialty: string;
-    hospital: string;
-    linked_at: string;
-    status: "active" | "inactive";
-}
-
-const linkedDoctor: DoctorLink = {
-    doctor_id: 2,
-    full_name:  "Dra. Ana López Ramírez",
-    specialty:  "Endocrinología",
-    hospital:   "Clínica San José",
-    linked_at:  "2026-03-01",
-    status:     "active",
-};
-
 const doctorAccess: string[] = [
     "Tu historial de tomas y adherencia",
     "Registro de síntomas con severidad",
-    "Lista de medicamentos activos y propios",
+    "Lista de medicamentos activos",
     "Estadísticas de evolución clínica",
 ];
 
 const PatientMyDoctor: React.FC = () => {
-    const [linked, setLinked] = useState<boolean>(true);
-    const [code, setCode]     = useState<string>("");
+    const [linked, setLinked]   = useState<boolean>(false);
+    const [code, setCode]       = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError]     = useState<string>("");
+    const [linkedAt, setLinkedAt] = useState<string>("");
 
-    const handleClaim = (): void => {
-        if (code.trim().length >= 4) setLinked(true);
+    const handleClaim = async (): Promise<void> => {
+        if (code.trim().length < 4) return;
+        setLoading(true);
+        setError("");
+        try {
+            const res = await fetch("/api/links/claim", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ link_code: code.trim() }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? "Código inválido o expirado");
+            setLinkedAt(new Date(data.created_at).toLocaleDateString("es-MX"));
+            setLinked(true);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Error al vincular");
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (linked) {
@@ -55,83 +56,45 @@ const PatientMyDoctor: React.FC = () => {
 
                 <div className="grid gap-5" style={{ gridTemplateColumns: "1fr 1fr" }}>
                     <Card>
-                        <div className="flex items-center gap-4 mb-5">
-                            <Avatar name={linkedDoctor.full_name} size={56} color={C.violet} />
-                            <div className="min-w-0">
-                                <div className="text-base font-extrabold truncate" style={{ color: C.text }}>
-                                    {linkedDoctor.full_name}
-                                </div>
-                                <div className="text-sm font-semibold" style={{ color: C.violet }}>
-                                    {linkedDoctor.specialty}
-                                </div>
-                                <div className="text-[13px]" style={{ color: C.textMuted }}>
-                                    {linkedDoctor.hospital}
-                                </div>
-                            </div>
+                        <div className="font-bold text-base mb-4" style={{ color: C.text }}>
+                            Vínculo activo
                         </div>
-
                         {[
-                            { label: "Vinculados desde",  value: linkedDoctor.linked_at },
-                            { label: "Reportes enviados", value: "12 reportes"          },
-                            { label: "Acceso a mis datos",value: "Meds + síntomas"      },
+                            { label: "Código usado",       value: code.toUpperCase() },
+                            { label: "Vinculados desde",   value: linkedAt            },
+                            { label: "Estado",             value: "Activo"            },
                         ].map((f) => (
-                            <div
-                                key={f.label}
-                                className="px-3 py-2.5 rounded-lg mb-2 bg-gray-100"
-                            >
-                                <div
-                                    className="text-[11px] font-semibold uppercase tracking-[0.04em] mb-1"
-                                    style={{ color: C.textMuted }}
-                                >
+                            <div key={f.label} className="px-3 py-2.5 rounded-lg mb-2 bg-gray-100">
+                                <div className="text-[11px] font-semibold uppercase tracking-[0.04em] mb-1" style={{ color: C.textMuted }}>
                                     {f.label}
                                 </div>
-                                <div className="text-sm font-semibold" style={{ color: C.text }}>
-                                    {f.value}
-                                </div>
+                                <div className="text-sm font-semibold" style={{ color: C.text }}>{f.value}</div>
                             </div>
                         ))}
-
                         <div className="mt-4">
-                            <Btn variant="ghost" full onClick={() => setLinked(false)}>
+                            <Btn variant="ghost" full onClick={() => { setLinked(false); setCode(""); }}>
                                 Desvincular médico
                             </Btn>
                         </div>
                     </Card>
 
-                    <div className="flex flex-col gap-4">
-                        <Card>
-                            <div className="font-bold text-[15px] mb-4" style={{ color: C.text }}>
-                                ¿Qué puede ver tu médico?
-                            </div>
-                            <div className="flex flex-col gap-2.5">
-                                {doctorAccess.map((item) => (
-                                    <div
-                                        key={item}
-                                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg"
-                                        style={{ background: C.primaryLight }}
-                                    >
-                                        <IcCheck size={14} color={C.primary} />
-                                        <span className="text-[13px] font-semibold" style={{ color: C.text }}>
-                      {item}
-                    </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </Card>
-
-                        <Card style={{ background: C.amberLight, border: `1px solid ${C.amber}` }}>
-                            <div className="font-bold text-[14px] mb-2" style={{ color: C.text }}>
-                                ¿Quieres cambiar de médico?
-                            </div>
-                            <p className="text-[13px] mb-3 mt-0" style={{ color: C.textMuted }}>
-                                Primero deberás desvincular a tu médico actual. Luego podrás ingresar
-                                un nuevo código de vinculación.
-                            </p>
-                            <Btn variant="ghost" size="sm" onClick={() => setLinked(false)}>
-                                Solicitar cambio
-                            </Btn>
-                        </Card>
-                    </div>
+                    <Card>
+                        <div className="font-bold text-[15px] mb-4" style={{ color: C.text }}>
+                            ¿Qué puede ver tu médico?
+                        </div>
+                        <div className="flex flex-col gap-2.5">
+                            {doctorAccess.map((item) => (
+                                <div
+                                    key={item}
+                                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg"
+                                    style={{ background: C.primaryLight }}
+                                >
+                                    <IcCheck size={14} color={C.primary} />
+                                    <span className="text-[13px] font-semibold" style={{ color: C.text }}>{item}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
                 </div>
             </div>
         );
@@ -159,13 +122,16 @@ const PatientMyDoctor: React.FC = () => {
                     label="Código de vinculación"
                     placeholder="Ej. AB3X7K"
                     value={code}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setCode(e.target.value.toUpperCase())
-                    }
+                    onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(""); }}
                 />
+                {error && (
+                    <div className="mt-2 px-3 py-2 rounded-lg text-[13px] font-semibold" style={{ background: C.coralLight, color: C.coralDark }}>
+                        {error}
+                    </div>
+                )}
                 <div className="mt-3">
-                    <Btn full icon={<IcCheck size={16} />} onClick={handleClaim}>
-                        Vincular con médico
+                    <Btn full icon={<IcCheck size={16} />} disabled={loading || code.trim().length < 4} onClick={() => void handleClaim()}>
+                        {loading ? "Vinculando…" : "Vincular con médico"}
                     </Btn>
                 </div>
                 <p className="text-[12px] text-center mt-3 mb-0" style={{ color: C.textMuted }}>

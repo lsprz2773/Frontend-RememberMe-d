@@ -35,17 +35,58 @@ const roleOptions: Array<[UserRole, string, string, React.ReactNode]> = [
 ];
 
 const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
-    const [mode, setMode] = useState<AuthMode>("login");
-    const [role, setRole] = useState<UserRole>("PATIENT");
-    const [form, setForm] = useState<AuthForm>({
+    const [mode, setMode]       = useState<AuthMode>("login");
+    const [role, setRole]       = useState<UserRole>("PATIENT");
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError]     = useState<string>("");
+    const [form, setForm]       = useState<AuthForm>({
         email: "", password: "", full_name: "", phone: "", dob: "",
     });
 
     const set =
         (k: keyof AuthForm) =>
             (e: React.ChangeEvent<HTMLInputElement>): void => {
+                setError("");
                 setForm((p) => ({ ...p, [k]: e.target.value }));
             };
+
+    const handleSubmit = async (): Promise<void> => {
+        setError("");
+        setLoading(true);
+        try {
+            const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
+            const body =
+                mode === "login"
+                    ? { email: form.email, password: form.password }
+                    : {
+                          email: form.email,
+                          password: form.password,
+                          full_name: form.full_name,
+                          phone: form.phone || undefined,
+                          date_of_birth: form.dob || undefined,
+                          role,
+                      };
+
+            const res = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.error ?? "Error al autenticarse");
+                return;
+            }
+
+            onLogin({ role: data.user.role as UserRole, full_name: data.user.full_name });
+        } catch {
+            setError("No se pudo conectar con el servidor");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="flex h-screen" style={{ fontFamily: "Nunito, sans-serif" }}>
@@ -110,7 +151,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                         <p className="text-sm m-0" style={{ color: C.textMuted }}>
                             {mode === "login" ? "¿No tienes cuenta? " : "¿Ya tienes cuenta? "}
                             <button
-                                onClick={() => setMode(mode === "login" ? "register" : "login")}
+                                onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
                                 className="bg-transparent border-none font-bold cursor-pointer p-0 text-sm"
                                 style={{ color: C.primary, fontFamily: "Nunito, sans-serif" }}
                             >
@@ -188,19 +229,29 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                             required
                         />
 
+                        {error && (
+                            <div
+                                className="px-3.5 py-2.5 rounded-lg text-[13px] font-semibold"
+                                style={{ background: C.coralLight, color: C.coralDark }}
+                            >
+                                {error}
+                            </div>
+                        )}
+
                         <Btn
                             full
                             size="lg"
                             style={{ marginTop: 4 }}
-                            onClick={() => onLogin(mode === "register" ? role : null)}
+                            disabled={loading}
+                            onClick={handleSubmit}
                         >
-                            {mode === "login" ? "Entrar a mi cuenta" : "Crear cuenta"}
+                            {loading
+                                ? "Cargando..."
+                                : mode === "login"
+                                    ? "Entrar a mi cuenta"
+                                    : "Crear cuenta"}
                         </Btn>
-
-                        {/* Test modes removed for academic project */}
                     </div>
-
-                    {/* Terms paragraph removed */}
                 </div>
             </div>
 

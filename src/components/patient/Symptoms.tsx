@@ -7,16 +7,8 @@ import Badge from "@/components/ui/Badge";
 import Input from "@/components/ui/Input";
 import SeverityDot from "@/components/ui/SeverityDot";
 import { C } from "@/lib/Colors";
-import { IcPlus, IcCheck, IcTrash } from "@/components/ui/Icons";
-
-interface SymptomEntry {
-    id: number;
-    symptom_name: string;
-    severity: number;
-    notes: string;
-    entry_date: string;
-    high_severity_alert: boolean;
-}
+import { IcPlus, IcCheck } from "@/components/ui/Icons";
+import type { ApiSymptom } from "@/types/api";
 
 interface NewSymptomForm {
     name: string;
@@ -25,42 +17,45 @@ interface NewSymptomForm {
     notes: string;
 }
 
-const initialSymptoms: SymptomEntry[] = [
-    { id: 1, symptom_name: "Dolor abdominal", severity: 6, notes: "Leve, después de comer",          entry_date: "2026-04-22", high_severity_alert: false },
-    { id: 2, symptom_name: "Náusea",          severity: 4, notes: "Por la mañana",                   entry_date: "2026-04-21", high_severity_alert: false },
-    { id: 3, symptom_name: "Mareo",           severity: 9, notes: "Episodio de 10 min al levantarse", entry_date: "2026-04-20", high_severity_alert: true  },
-    { id: 4, symptom_name: "Cefalea",         severity: 5, notes: "Tensional leve",                   entry_date: "2026-04-19", high_severity_alert: false },
-    { id: 5, symptom_name: "Fatiga",          severity: 7, notes: "Cansancio desde el mediodía",     entry_date: "2026-04-18", high_severity_alert: false },
-    { id: 6, symptom_name: "Dolor abdominal", severity: 3, notes: "Muy leve",                         entry_date: "2026-04-17", high_severity_alert: false },
-];
-
 const severityColor = (v: number): string =>
     v >= 8 ? C.coral : v >= 5 ? C.amber : C.primary;
 
 const PatientSymptoms: React.FC = () => {
     const [showForm, setShowForm] = useState<boolean>(false);
-    const [list, setList]         = useState<SymptomEntry[]>(initialSymptoms);
+    const [list, setList]         = useState<ApiSymptom[]>([]);
+    const [saving, setSaving]     = useState<boolean>(false);
+    const [saveError, setSaveError] = useState<string>("");
     const [form, setForm]         = useState<NewSymptomForm>({
-        name: "", severity: 5, date: "2026-04-22", notes: "",
+        name: "", severity: 5,
+        date: new Date().toISOString().slice(0, 10),
+        notes: "",
     });
 
-    const save = (): void => {
+    const save = async (): Promise<void> => {
         if (!form.name.trim()) return;
-        const entry: SymptomEntry = {
-            id: Date.now(),
-            symptom_name: form.name,
-            severity: form.severity,
-            notes: form.notes,
-            entry_date: form.date,
-            high_severity_alert: form.severity >= 8,
-        };
-        setList((prev) => [entry, ...prev]);
-        setForm({ name: "", severity: 5, date: "2026-04-22", notes: "" });
-        setShowForm(false);
-    };
-
-    const remove = (id: number): void => {
-        setList((prev) => prev.filter((s) => s.id !== id));
+        setSaving(true);
+        setSaveError("");
+        try {
+            const res = await fetch("/api/symptoms", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    symptom_name: form.name,
+                    severity: form.severity,
+                    notes: form.notes || undefined,
+                    entry_date: form.date,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? "Error al guardar");
+            setList((prev) => [data as ApiSymptom, ...prev]);
+            setForm({ name: "", severity: 5, date: new Date().toISOString().slice(0, 10), notes: "" });
+            setShowForm(false);
+        } catch (e) {
+            setSaveError(e instanceof Error ? e.message : "Error al guardar");
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -92,18 +87,14 @@ const PatientSymptoms: React.FC = () => {
                             label="Síntoma"
                             placeholder="Ej. Dolor de cabeza"
                             value={form.name}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                setForm((p) => ({ ...p, name: e.target.value }))
-                            }
+                            onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                             required
                         />
                         <Input
                             label="Fecha"
                             type="date"
                             value={form.date}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                setForm((p) => ({ ...p, date: e.target.value }))
-                            }
+                            onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
                         />
                     </div>
                     <div className="mb-3">
@@ -119,9 +110,7 @@ const PatientSymptoms: React.FC = () => {
                             min={1}
                             max={10}
                             value={form.severity}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                setForm((p) => ({ ...p, severity: parseInt(e.target.value) }))
-                            }
+                            onChange={(e) => setForm((p) => ({ ...p, severity: parseInt(e.target.value) }))}
                             className="w-full"
                             style={{ accentColor: severityColor(form.severity) }}
                         />
@@ -138,9 +127,7 @@ const PatientSymptoms: React.FC = () => {
                         label="Notas"
                         placeholder="Describe el síntoma..."
                         value={form.notes}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setForm((p) => ({ ...p, notes: e.target.value }))
-                        }
+                        onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
                     />
                     {form.severity >= 8 && (
                         <div
@@ -150,96 +137,93 @@ const PatientSymptoms: React.FC = () => {
                             Severidad alta — tu médico recibirá una alerta automática
                         </div>
                     )}
+                    {saveError && (
+                        <div className="px-3 py-2 rounded-lg mt-3 text-[13px] font-semibold" style={{ background: C.coralLight, color: C.coralDark }}>
+                            {saveError}
+                        </div>
+                    )}
                     <div className="flex gap-2.5 mt-3.5">
-                        <Btn icon={<IcCheck size={16} />} onClick={save}>
-                            Guardar registro
+                        <Btn icon={<IcCheck size={16} />} disabled={saving} onClick={() => void save()}>
+                            {saving ? "Guardando…" : "Guardar registro"}
                         </Btn>
-                        <Btn variant="ghost" onClick={() => setShowForm(false)}>
+                        <Btn variant="ghost" onClick={() => { setShowForm(false); setSaveError(""); }}>
                             Cancelar
                         </Btn>
                     </div>
                 </Card>
             )}
 
-            <Card className="mb-5">
-                <div className="font-bold text-[15px] mb-4" style={{ color: C.text }}>
-                    Severidad últimos 7 días
-                </div>
-                <div className="flex items-end gap-3 h-24 mb-3">
-                    {list.slice(0, 7).reverse().map((s, i) => (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                            <div className="text-[10px] font-bold" style={{ color: severityColor(s.severity) }}>
-                                {s.severity}
-                            </div>
-                            <div
-                                className="w-full rounded-t-[3px]"
-                                style={{
-                                    background: severityColor(s.severity),
-                                    height: `${(s.severity / 10) * 72}px`,
-                                    minHeight: 4,
-                                }}
-                            />
-                            <div className="text-[10px]" style={{ color: C.textMuted }}>
-                                {s.entry_date.slice(5)}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                <div className="flex gap-4">
-                    {[
-                        { color: C.primary, label: "Leve (1-4)"     },
-                        { color: C.amber,   label: "Moderado (5-7)" },
-                        { color: C.coral,   label: "Severo (8-10)"  },
-                    ].map((x) => (
-                        <div key={x.label} className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: x.color }} />
-                            <span className="text-[12px]" style={{ color: C.textMuted }}>{x.label}</span>
-                        </div>
-                    ))}
-                </div>
-            </Card>
-
-            <div className="flex flex-col gap-2.5">
-                {list.map((s) => (
-                    <Card
-                        key={s.id}
-                        pad={16}
-                        style={{
-                            borderLeft: s.high_severity_alert
-                                ? `4px solid ${C.coral}`
-                                : "4px solid transparent",
-                        }}
-                    >
-                        <div className="flex items-center gap-3.5">
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2.5 mb-1 flex-wrap">
-                  <span className="text-[15px] font-bold truncate" style={{ color: C.text }}>
-                    {s.symptom_name}
-                  </span>
-                                    {s.high_severity_alert && (
-                                        <span className="shrink-0">
-                      <Badge label="Alta severidad" variant="alert" dot />
-                    </span>
-                                    )}
+            {list.length > 1 && (
+                <Card className="mb-5">
+                    <div className="font-bold text-[15px] mb-4" style={{ color: C.text }}>
+                        Severidad (sesión actual)
+                    </div>
+                    <div className="flex items-end gap-3 h-24 mb-3">
+                        {list.slice(0, 7).reverse().map((s, i) => (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                                <div className="text-[10px] font-bold" style={{ color: severityColor(s.severity) }}>
+                                    {s.severity}
                                 </div>
-                                <div className="text-[13px]" style={{ color: C.textMuted }}>{s.notes}</div>
+                                <div
+                                    className="w-full rounded-t-[3px]"
+                                    style={{
+                                        background: severityColor(s.severity),
+                                        height: `${(s.severity / 10) * 72}px`,
+                                        minHeight: 4,
+                                    }}
+                                />
+                                <div className="text-[10px]" style={{ color: C.textMuted }}>
+                                    {s.entry_date.slice(5)}
+                                </div>
                             </div>
-                            <div className="text-right shrink-0">
-                                <SeverityDot value={s.severity} />
-                                <div className="text-xs mt-1" style={{ color: C.textMuted }}>{s.entry_date}</div>
-                            </div>
-                            <Btn
-                                variant="ghost"
-                                size="sm"
-                                icon={<IcTrash size={14} />}
-                                onClick={() => remove(s.id)}
+                        ))}
+                    </div>
+                </Card>
+            )}
+
+            {list.length === 0 ? (
+                <div className="text-sm text-center py-12" style={{ color: C.textMuted }}>
+                    Aún no has registrado síntomas en esta sesión.
+                    <br />Usa el botón de arriba para registrar uno.
+                </div>
+            ) : (
+                <div className="flex flex-col gap-2.5">
+                    {list.map((s) => {
+                        const isHigh = s.severity >= 8;
+                        return (
+                            <Card
+                                key={s.id}
+                                pad={16}
+                                style={{
+                                    borderLeft: isHigh
+                                        ? `4px solid ${C.coral}`
+                                        : "4px solid transparent",
+                                }}
                             >
-                                {" "}
-                            </Btn>
-                        </div>
-                    </Card>
-                ))}
-            </div>
+                                <div className="flex items-center gap-3.5">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+                                            <span className="text-[15px] font-bold truncate" style={{ color: C.text }}>
+                                                {s.symptom_name}
+                                            </span>
+                                            {isHigh && (
+                                                <span className="shrink-0">
+                                                    <Badge label="Alta severidad" variant="alert" dot />
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="text-[13px]" style={{ color: C.textMuted }}>{s.notes ?? ""}</div>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <SeverityDot value={s.severity} />
+                                        <div className="text-xs mt-1" style={{ color: C.textMuted }}>{s.entry_date}</div>
+                                    </div>
+                                </div>
+                            </Card>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 };

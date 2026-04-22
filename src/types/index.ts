@@ -16,9 +16,11 @@ export interface User {
 export interface MedicalProfile {
     id: number;
     user_id: number;
-    allergies: string;
-    chronic_conditions: string;
-    emergency_contact: string;
+    allergies: string | null;
+    chronic_conditions: string | null;
+    emergency_contact_name: string | null;
+    emergency_contact_phone: string | null;
+    emergency_contact_relation: string | null;
 }
 
 export interface Medication {
@@ -28,7 +30,7 @@ export interface Medication {
     frequency_hours: number;
     start_date: string;
     end_date: string | null;
-    instructions: string;
+    instructions: string | null;
     is_active: boolean;
     taken: number;
     total: number;
@@ -94,6 +96,7 @@ export interface BtnProps {
     full?: boolean;
     style?: React.CSSProperties;
     className?: string;
+    disabled?: boolean;
 }
 
 export interface BadgeProps {
@@ -167,11 +170,12 @@ export interface SidebarProps {
 
 export interface AppShellProps {
     role: UserRole;
+    userName: string;
     onLogout: () => void;
 }
 
 export interface AuthScreenProps {
-    onLogin: (role: UserRole | null) => void;
+    onLogin: (user: { role: UserRole; full_name: string }) => void;
 }
 
 export interface PatientDetailProps {

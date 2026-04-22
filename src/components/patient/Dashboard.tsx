@@ -1,105 +1,93 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import ProgressBar from "@/components/ui/ProgressBar";
 import SeverityDot from "@/components/ui/SeverityDot";
 import { C } from "@/lib/Colors";
 import { IcPill } from "@/components/ui/Icons";
+import type { ApiIntakeLog, ApiMedication } from "@/types/api";
+import type { IntakeStatus } from "@/types";
 
-interface Medication {
-    id: number;
-    name: string;
-    dosage: string;
-    frequency_hours: number;
-    start_date: string;
-    end_date: string | null;
-    instructions: string;
-    is_active: boolean;
-    taken: number;
-    total: number;
-    source: "doctor" | "patient";
-    prescriber: string | null;
+interface Props {
+    userName: string;
 }
 
-interface IntakeLog {
-    id: number;
-    medication: string;
-    dosage: string;
-    scheduled_time: string;
-    status: "taken" | "pending" | "late" | "skipped";
-    taken_at: string | null;
-}
-
-interface SymptomEntry {
-    id: number;
-    symptom_name: string;
-    severity: number;
-    notes: string;
-    entry_date: string;
-    high_severity_alert: boolean;
-}
-
-const patientDashboardMeds: Medication[] = [
-    { id: 1, name: "Metformina",  dosage: "850mg",   frequency_hours: 12, start_date: "2026-03-01", end_date: null,         instructions: "Tomar con alimentos",     is_active: true, taken: 18, total: 22, source: "doctor",  prescriber: "Dra. Ana López" },
-    { id: 2, name: "Lisinopril",  dosage: "10mg",    frequency_hours: 24, start_date: "2026-03-15", end_date: "2026-06-15", instructions: "Por la mañana en ayunas", is_active: true, taken: 14, total: 16, source: "doctor",  prescriber: "Dra. Ana López" },
-    { id: 3, name: "Paracetamol", dosage: "500mg",   frequency_hours: 8,  start_date: "2026-04-18", end_date: "2026-04-25", instructions: "En caso de dolor",        is_active: true, taken: 5,  total: 6,  source: "patient", prescriber: null },
-    { id: 5, name: "Vitamina D3", dosage: "1000 UI", frequency_hours: 24, start_date: "2026-04-01", end_date: null,         instructions: "Con el desayuno",         is_active: true, taken: 22, total: 22, source: "patient", prescriber: null },
-];
-
-const todayIntakes: IntakeLog[] = [
-    { id: 1, medication: "Metformina",  dosage: "850mg", scheduled_time: "08:00", status: "taken",   taken_at: "08:14" },
-    { id: 2, medication: "Lisinopril",  dosage: "10mg",  scheduled_time: "08:00", status: "taken",   taken_at: "08:14" },
-    { id: 3, medication: "Paracetamol", dosage: "500mg", scheduled_time: "08:00", status: "taken",   taken_at: "08:30" },
-    { id: 4, medication: "Metformina",  dosage: "850mg", scheduled_time: "14:00", status: "pending", taken_at: null    },
-    { id: 5, medication: "Paracetamol", dosage: "500mg", scheduled_time: "16:00", status: "pending", taken_at: null    },
-    { id: 6, medication: "Paracetamol", dosage: "500mg", scheduled_time: "00:00", status: "pending", taken_at: null    },
-];
-
-const recentSymptoms: SymptomEntry[] = [
-    { id: 1, symptom_name: "Dolor abdominal", severity: 6, notes: "Leve, después de comer",           entry_date: "2026-04-22", high_severity_alert: false },
-    { id: 3, symptom_name: "Mareo",           severity: 9, notes: "Episodio de 10 min al levantarse", entry_date: "2026-04-20", high_severity_alert: true  },
-    { id: 4, symptom_name: "Cefalea",         severity: 5, notes: "Tensional leve",                   entry_date: "2026-04-19", high_severity_alert: false },
-];
-
-const statusStyles: Record<IntakeLog["status"], { bg: string; color: string; label: string }> = {
+const statusStyles: Record<IntakeStatus, { bg: string; color: string; label: string }> = {
     taken:   { bg: C.primaryLight, color: C.primary,   label: "Tomado"    },
     pending: { bg: C.amberLight,   color: C.amber,     label: "Pendiente" },
     late:    { bg: C.coralLight,   color: C.coral,     label: "Tarde"     },
     skipped: { bg: C.borderLight,  color: C.textMuted, label: "Omitido"   },
 };
 
-const PatientDashboard: React.FC = () => {
-    const taken   = todayIntakes.filter((t) => t.status === "taken").length;
-    const pending = todayIntakes.filter((t) => t.status === "pending").length;
+const DAY_NAMES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const MONTH_NAMES = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+];
+
+function formatDate(d: Date): string {
+    return `${DAY_NAMES[d.getDay()].charAt(0).toUpperCase() + DAY_NAMES[d.getDay()].slice(1)} ${d.getDate()} de ${MONTH_NAMES[d.getMonth()]}, ${d.getFullYear()}`;
+}
+
+function formatTime(timeStr: string): string {
+    return timeStr.slice(0, 5);
+}
+
+const PatientDashboard: React.FC<Props> = ({ userName }) => {
+    const [intakes, setIntakes]   = useState<ApiIntakeLog[]>([]);
+    const [meds, setMeds]         = useState<ApiMedication[]>([]);
+    const [loadingI, setLoadingI] = useState(true);
+    const [loadingM, setLoadingM] = useState(true);
+
+    useEffect(() => {
+        fetch("/api/intake-logs/today")
+            .then((r) => r.json())
+            .then((d: { data: ApiIntakeLog[] }) => setIntakes(d.data ?? []))
+            .catch(() => setIntakes([]))
+            .finally(() => setLoadingI(false));
+
+        fetch("/api/medications")
+            .then((r) => r.json())
+            .then((d: { data: ApiMedication[] }) => setMeds(d.data ?? []))
+            .catch(() => setMeds([]))
+            .finally(() => setLoadingM(false));
+    }, []);
+
+    const taken   = intakes.filter((t) => t.status === "taken").length;
+    const pending = intakes.filter((t) => t.status === "pending").length;
+    const firstName = userName.split(" ")[0];
 
     return (
         <div>
             <div className="mb-7">
                 <div className="text-[13px] font-semibold mb-0.5" style={{ color: C.textMuted }}>
-                    Martes 22 de abril, 2026
+                    {formatDate(new Date())}
                 </div>
                 <h1 className="text-[26px] font-extrabold m-0" style={{ color: C.text }}>
-                    Buenos días, Juan 👋
+                    Buenos días, {firstName} 👋
                 </h1>
-                <p className="text-sm mt-1 mb-0" style={{ color: C.textMuted }}>
-                    Llevas <strong style={{ color: C.text }}>5 días</strong> con adherencia perfecta. ¡Sigue así!
-                </p>
             </div>
 
             <div className="grid grid-cols-3 gap-3.5 mb-7">
-                <div className="px-5 py-5 rounded-[12px]" style={{ background: C.primaryLight, border: `1px solid ${C.primaryMid}` }}>
-                    <div className="text-[28px] font-extrabold leading-none" style={{ color: C.primary }}>87%</div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wide mt-1.5" style={{ color: C.textMuted }}>Adherencia mensual</div>
-                </div>
                 <div className="px-5 py-5 rounded-[12px]" style={{ background: C.amberLight, border: `1px solid ${C.amber}` }}>
-                    <div className="text-[28px] font-extrabold leading-none" style={{ color: C.amber }}>{pending}</div>
+                    <div className="text-[28px] font-extrabold leading-none" style={{ color: C.amber }}>
+                        {loadingI ? "…" : pending}
+                    </div>
                     <div className="text-[11px] font-semibold uppercase tracking-wide mt-1.5" style={{ color: C.textMuted }}>Tomas pendientes</div>
                 </div>
+                <div className="px-5 py-5 rounded-[12px]" style={{ background: C.primaryLight, border: `1px solid ${C.primaryMid}` }}>
+                    <div className="text-[28px] font-extrabold leading-none" style={{ color: C.primary }}>
+                        {loadingI ? "…" : taken}
+                    </div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wide mt-1.5" style={{ color: C.textMuted }}>Tomas tomadas hoy</div>
+                </div>
                 <div className="px-5 py-5 rounded-[12px]" style={{ background: C.borderLight, border: `1px solid ${C.border}` }}>
-                    <div className="text-[28px] font-extrabold leading-none" style={{ color: C.text }}>5🔥</div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wide mt-1.5" style={{ color: C.textMuted }}>Días de racha</div>
+                    <div className="text-[28px] font-extrabold leading-none" style={{ color: C.text }}>
+                        {loadingM ? "…" : meds.length}
+                    </div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wide mt-1.5" style={{ color: C.textMuted }}>Medicamentos activos</div>
                 </div>
             </div>
 
@@ -108,99 +96,80 @@ const PatientDashboard: React.FC = () => {
                     <div className="font-bold text-[15px] mb-4" style={{ color: C.text }}>
                         Tomas de hoy
                         <span className="text-[13px] font-normal ml-2" style={{ color: C.textMuted }}>
-              {taken}/{todayIntakes.length}
-            </span>
+                            {taken}/{intakes.length}
+                        </span>
                     </div>
-                    <ProgressBar value={taken} max={todayIntakes.length} color={C.primary} height={6} />
-                    <div className="flex flex-col gap-2 mt-4">
-                        {todayIntakes.map((t) => {
-                            const s = statusStyles[t.status];
-                            return (
-                                <div
-                                    key={t.id}
-                                    className="flex items-center justify-between px-3.5 py-2.5 rounded-lg gap-3"
-                                    style={{ background: s.bg }}
-                                >
-                                    <div className="min-w-0 flex-1">
-                                        <div className="text-[13px] font-semibold truncate" style={{ color: C.text }}>
-                                            {t.medication}
+                    {loadingI ? (
+                        <div className="text-sm text-center py-6" style={{ color: C.textMuted }}>Cargando…</div>
+                    ) : intakes.length === 0 ? (
+                        <div className="text-sm text-center py-6" style={{ color: C.textMuted }}>Sin tomas programadas para hoy</div>
+                    ) : (
+                        <>
+                            <ProgressBar value={taken} max={intakes.length} color={C.primary} height={6} />
+                            <div className="flex flex-col gap-2 mt-4">
+                                {intakes.map((t) => {
+                                    const s = statusStyles[t.status];
+                                    return (
+                                        <div
+                                            key={t.intake_id}
+                                            className="flex items-center justify-between px-3.5 py-2.5 rounded-lg gap-3"
+                                            style={{ background: s.bg }}
+                                        >
+                                            <div className="min-w-0 flex-1">
+                                                <div className="text-[13px] font-semibold truncate" style={{ color: C.text }}>
+                                                    {t.medication_name}
+                                                </div>
+                                                <div className="text-[11px] mt-0.5" style={{ color: C.textMuted }}>
+                                                    {t.dosage} · {formatTime(t.scheduled_time)}
+                                                </div>
+                                            </div>
+                                            <span
+                                                className="text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 bg-white"
+                                                style={{ color: s.color }}
+                                            >
+                                                {s.label}
+                                            </span>
                                         </div>
-                                        <div className="text-[11px] mt-0.5" style={{ color: C.textMuted }}>
-                                            {t.dosage} · {t.scheduled_time}
-                                        </div>
-                                    </div>
-                                    <span
-                                        className="text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 bg-white"
-                                        style={{ color: s.color }}
-                                    >
-                    {s.label}
-                  </span>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                    );
+                                })}
+                            </div>
+                        </>
+                    )}
                 </Card>
 
-                <div className="flex flex-col gap-4">
-                    <Card>
-                        <div className="font-bold text-[15px] mb-4" style={{ color: C.text }}>
-                            Medicamentos activos
-                        </div>
+                <Card>
+                    <div className="font-bold text-[15px] mb-4" style={{ color: C.text }}>
+                        Medicamentos activos
+                    </div>
+                    {loadingM ? (
+                        <div className="text-sm text-center py-6" style={{ color: C.textMuted }}>Cargando…</div>
+                    ) : meds.length === 0 ? (
+                        <div className="text-sm text-center py-6" style={{ color: C.textMuted }}>Sin medicamentos activos</div>
+                    ) : (
                         <div className="flex flex-col gap-3">
-                            {patientDashboardMeds.map((m) => {
-                                const adh = m.total > 0 ? Math.round((m.taken / m.total) * 100) : 0;
-                                const col = adh >= 80 ? C.primary : C.amber;
-                                return (
-                                    <div key={m.id} className="flex items-center gap-3">
-                                        <div
-                                            className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-                                            style={{
-                                                background: m.source === "doctor" ? C.primaryLight : C.violetLight,
-                                                color:      m.source === "doctor" ? C.primary      : C.violet,
-                                            }}
-                                        >
-                                            <IcPill size={18} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-1.5 mb-0.5">
-                                                <span className="text-sm font-bold truncate" style={{ color: C.text }}>{m.name}</span>
-                                                <span className="text-xs" style={{ color: C.textMuted }}>{m.dosage}</span>
-                                            </div>
-                                            <ProgressBar value={m.taken} max={m.total} color={col} height={4} />
-                                        </div>
-                                        <div className="text-sm font-bold shrink-0" style={{ color: col }}>{adh}%</div>
+                            {meds.map((m) => (
+                                <div key={m.id} className="flex items-center gap-3">
+                                    <div
+                                        className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                                        style={{ background: C.primaryLight, color: C.primary }}
+                                    >
+                                        <IcPill size={18} />
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </Card>
-
-                    <Card>
-                        <div className="font-bold text-[15px] mb-4" style={{ color: C.text }}>
-                            Síntomas recientes
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            {recentSymptoms.map((s) => (
-                                <div
-                                    key={s.id}
-                                    className="flex items-center justify-between px-3.5 py-2.5 rounded-lg gap-3"
-                                    style={{ background: s.high_severity_alert ? C.coralLight : C.borderLight }}
-                                >
-                                    <div className="min-w-0 flex-1">
-                                        <div className="text-[13px] font-semibold truncate" style={{ color: C.text }}>
-                                            {s.symptom_name}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 mb-0.5">
+                                            <span className="text-sm font-bold truncate" style={{ color: C.text }}>{m.name}</span>
+                                            <span className="text-xs" style={{ color: C.textMuted }}>{m.dosage}</span>
                                         </div>
-                                        <div className="text-[11px]" style={{ color: C.textMuted }}>{s.entry_date}</div>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                        {s.high_severity_alert && <Badge label="⚠" variant="alert" />}
-                                        <SeverityDot value={s.severity} />
+                                        <div className="text-[11px]" style={{ color: C.textMuted }}>
+                                            Cada {m.frequency_hours}h
+                                            {m.end_date ? ` · Hasta ${m.end_date.slice(0, 10)}` : " · Crónico"}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    </Card>
-                </div>
+                    )}
+                </Card>
             </div>
         </div>
     );

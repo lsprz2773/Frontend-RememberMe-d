@@ -23,9 +23,10 @@ type Screen =
 interface AppState {
     authed: boolean;
     role: UserRole;
+    full_name: string;
 }
 
-const AppShell: React.FC<AppShellProps> = ({ role, onLogout }) => {
+const AppShell: React.FC<AppShellProps> = ({ role, userName, onLogout }) => {
     const [screen, setScreen]                   = useState<Screen>("dashboard");
     const [selectedPatient, setSelectedPatient] = useState<DoctorPatient | null>(null);
 
@@ -42,13 +43,13 @@ const AppShell: React.FC<AppShellProps> = ({ role, onLogout }) => {
     const renderContent = (): React.ReactNode => {
         if (role === "PATIENT") {
             switch (screen) {
-                case "dashboard":   return <PatientDashboard />;
+                case "dashboard":   return <PatientDashboard userName={userName} />;
                 case "medications": return <PatientMedications />;
                 case "intakes":     return <PatientIntakes />;
                 case "symptoms":    return <PatientSymptoms />;
                 case "doctor":      return <PatientMyDoctor />;
-                case "profile":     return <PatientProfile />;
-                default:            return <PatientDashboard />;
+                case "profile":     return <PatientProfile userName={userName} />;
+                default:            return <PatientDashboard userName={userName} />;
             }
         }
         if (role === "DOCTOR") {
@@ -58,7 +59,7 @@ const AppShell: React.FC<AppShellProps> = ({ role, onLogout }) => {
                 case "patient-detail":
                     return <PatientDetail patient={selectedPatient} onBack={() => setScreen("dashboard")} />;
                 case "profile":
-                    return <PatientProfile />;
+                    return <PatientProfile userName={userName} />;
                 default:
                     return <DoctorDashboard onSelectPatient={handleSelectPatient} />;
             }
@@ -81,30 +82,52 @@ export const App: React.FC = () => {
     const [ready, setReady]  = useState(false);
 
     useEffect(() => {
-        try {
-            const saved = JSON.parse(localStorage.getItem("rm_state") ?? "{}") as Partial<AppState>;
-            setState(saved);
-        } catch {
-            // ignore
-        }
-        setReady(true);
+        const init = async (): Promise<void> => {
+            try {
+                const saved = JSON.parse(localStorage.getItem("rm_state") ?? "{}") as Partial<AppState>;
+                if (saved.authed) {
+                    // Verificar que la cookie rm_token sigue válida
+                    const res = await fetch("/api/auth/profile");
+                    if (res.ok) {
+                        setState(saved);
+                    } else {
+                        // Cookie expirada o inexistente — limpiar estado
+                        localStorage.removeItem("rm_state");
+                    }
+                }
+            } catch {
+                // ignore
+            }
+            setReady(true);
+        };
+        void init();
     }, []);
 
-    const login = (selectedRole: UserRole | null): void => {
-        const r: UserRole        = selectedRole ?? "PATIENT";
-        const newState: AppState = { authed: true, role: r };
+    const login = (user: { role: UserRole; full_name: string }): void => {
+        const newState: AppState = { authed: true, role: user.role, full_name: user.full_name };
         setState(newState);
         localStorage.setItem("rm_state", JSON.stringify(newState));
     };
 
-    const logout = (): void => {
+    const logout = async (): Promise<void> => {
+        try {
+            await fetch("/api/auth/logout", { method: "POST" });
+        } catch {
+            // ignore network errors on logout
+        }
         localStorage.removeItem("rm_state");
         setState({});
     };
 
     if (!ready) return null;
     if (!state.authed) return <AuthScreen onLogin={login} />;
-    return <AppShell role={state.role as UserRole} onLogout={logout} />;
+    return (
+        <AppShell
+            role={state.role as UserRole}
+            userName={state.full_name ?? "Usuario"}
+            onLogout={logout}
+        />
+    );
 };
 
 export default AppShell;
