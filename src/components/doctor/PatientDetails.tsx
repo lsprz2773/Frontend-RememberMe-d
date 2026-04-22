@@ -7,7 +7,8 @@ import Badge from "@/components/ui/Badge";
 import SeverityDot from "@/components/ui/SeverityDot";
 import ProgressBar from "@/components/ui/ProgressBar";
 import MedsTab from "@/components/doctor/MedsTab";
-import { C } from "@/lib/colors";
+import { C } from "@/lib/Colors";
+import type { DoctorPatient } from "@/components/doctor/Dashboard";
 
 type DetailTab = "overview" | "meds" | "symptoms" | "profile";
 
@@ -20,19 +21,8 @@ interface SymptomEntry {
     high_severity_alert: boolean;
 }
 
-interface Patient {
-    full_name: string;
-    alert: boolean;
-    conditions: string;
-    linked_at: string;
-    age: number;
-    adherence_pct: number;
-    streak: number;
-    meds: number;
-}
-
 interface PatientDetailProps {
-    patient: Patient | null;
+    patient: DoctorPatient | null;
     onBack: () => void;
 }
 
@@ -57,7 +47,7 @@ const tabs: Array<[DetailTab, string]> = [
     ["profile",  "Perfil clínico"],
 ];
 
-const profileFields = (patient: Patient) => [
+const profileFields = (patient: DoctorPatient) => [
     { l: "Nombre completo", v: patient.full_name },
     { l: "Edad",            v: `${patient.age} años` },
     { l: "Vinculado desde", v: patient.linked_at },
@@ -71,7 +61,7 @@ const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
     const color = adColor(patient.adherence_pct);
 
     return (
-        <div className="p-6">
+        <div>
             <button
                 onClick={onBack}
                 className="flex items-center gap-1.5 bg-transparent border-none text-sm font-semibold cursor-pointer mb-5 p-0 hover:opacity-70 transition-opacity"
@@ -303,7 +293,7 @@ const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
                         >
                             <div
                                 className="text-[11px] font-bold uppercase tracking-[0.04em] mb-1"
-                                style={{ color: "oklch(0.45 0.15 25)" }}
+                                style={{ color: C.coralDark }}
                             >
                                 Alergias
                             </div>
@@ -318,7 +308,7 @@ const PatientDetails: React.FC<PatientDetailProps> = ({ patient, onBack }) => {
                         >
                             <div
                                 className="text-[11px] font-bold uppercase tracking-[0.04em] mb-1"
-                                style={{ color: "oklch(0.45 0.12 75)" }}
+                                style={{ color: C.amberDark }}
                             >
                                 Condiciones crónicas
                             </div>
