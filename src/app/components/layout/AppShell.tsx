@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import AuthScreen from "@/components/layout/AuthScreen";
-import DoctorDashboard, { type DoctorPatient } from "@/components/doctor/Dashboard";
+import DoctorDashboard from "@/components/doctor/Dashboard";
 import PatientDetail from "@/components/doctor/PatientDetail";
 import PatientDashboard from "@/components/patient/Dashboard";
 import PatientMedications from "@/components/patient/Medications";
@@ -12,8 +12,8 @@ import PatientSymptoms from "@/components/patient/Symptoms";
 import PatientMyDoctor from "@/components/patient/MyDoctor";
 import PatientProfile from "@/components/patient/Profile";
 import { C } from "@/lib/colors";
-
-export type UserRole = "PATIENT" | "DOCTOR";
+import type { UserRole, AppShellProps } from "@/types";
+import type { DoctorPatient } from "@/types";
 
 type Screen =
     | "dashboard" | "medications" | "intakes"
@@ -23,11 +23,6 @@ type Screen =
 interface AppState {
     authed: boolean;
     role: UserRole;
-}
-
-interface AppShellProps {
-    role: UserRole;
-    onLogout: () => void;
 }
 
 const AppShell: React.FC<AppShellProps> = ({ role, onLogout }) => {
@@ -56,7 +51,6 @@ const AppShell: React.FC<AppShellProps> = ({ role, onLogout }) => {
                 default:            return <PatientDashboard />;
             }
         }
-
         if (role === "DOCTOR") {
             switch (screen) {
                 case "dashboard":
@@ -70,7 +64,6 @@ const AppShell: React.FC<AppShellProps> = ({ role, onLogout }) => {
                     return <DoctorDashboard onSelectPatient={handleSelectPatient} />;
             }
         }
-
         return null;
     };
 
@@ -90,7 +83,7 @@ const AppShell: React.FC<AppShellProps> = ({ role, onLogout }) => {
     );
 };
 
-const App: React.FC = () => {
+export const App: React.FC = () => {
     const [state, setState] = useState<Partial<AppState>>(() => {
         try {
             return JSON.parse(localStorage.getItem("rm_state") ?? "{}") as AppState;
@@ -100,7 +93,7 @@ const App: React.FC = () => {
     });
 
     const login = (selectedRole: UserRole | null): void => {
-        const r: UserRole = selectedRole ?? "PATIENT";
+        const r: UserRole  = selectedRole ?? "PATIENT";
         const newState: AppState = { authed: true, role: r };
         setState(newState);
         localStorage.setItem("rm_state", JSON.stringify(newState));
@@ -115,5 +108,4 @@ const App: React.FC = () => {
     return <AppShell role={state.role as UserRole} onLogout={logout} />;
 };
 
-export { App };
 export default AppShell;
