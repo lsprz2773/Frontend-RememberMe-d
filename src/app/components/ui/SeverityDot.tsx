@@ -1,15 +1,24 @@
 import React from "react";
+import type { SeverityDotProps } from "@/types";
+import { C } from "@/lib/colors";
 
-const colorClass = (v: number) =>
-    v >= 8 ? "bg-red-400 text-red-400" : v >= 5 ? "bg-amber-400 text-amber-400" : "bg-blue-500 text-blue-500";
+const SeverityDot: React.FC<SeverityDotProps> = ({ value }) => {
+    const color =
+        value >= 8 ? C.coral
+            : value >= 5 ? C.amber
+                : C.primary;
 
-const SeverityDot = ({ value }) => {
-    const cls = colorClass(value);
-    const [bg, text] = cls.split(" ");
     return (
-        <div className="flex items-center gap-1.5">
-            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${bg}`} />
-            <span className={`text-xs font-bold ${text}`}>{value}/10</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <div
+                style={{
+                    width: 10, height: 10, borderRadius: "50%",
+                    background: color, flexShrink: 0,
+                }}
+            />
+            <span style={{ fontSize: 12, fontWeight: 700, color }}>
+        {value}/10
+      </span>
         </div>
     );
 };
