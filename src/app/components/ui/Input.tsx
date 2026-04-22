@@ -1,21 +1,37 @@
 "use client";
 
 import React, { useState } from "react";
+import type { InputProps } from "@/types";
+import { C } from "@/lib/colors";
 
-const Input = ({ label, placeholder, type = "text", value, onChange, icon, required, defaultValue }) => {
-    const [focus, setFocus] = useState(false);
+const Input: React.FC<InputProps> = ({
+                                         label, placeholder, type = "text",
+                                         value, onChange, icon, required, defaultValue,
+                                     }) => {
+    const [focus, setFocus] = useState<boolean>(false);
 
     return (
-        <div className="flex flex-col">
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {label && (
-                <label className="text-[13px] font-semibold text-gray-800 block mb-[5px]">
+                <label
+                    style={{
+                        fontSize: 13, fontWeight: 600, color: C.text,
+                        display: "block", marginBottom: 5,
+                    }}
+                >
                     {label}
-                    {required && <span className="text-red-400 ml-0.5">*</span>}
+                    {required && <span style={{ color: C.coral, marginLeft: 2 }}>*</span>}
                 </label>
             )}
-            <div className="relative">
+            <div style={{ position: "relative" }}>
                 {icon && (
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 flex pointer-events-none">
+                    <span
+                        style={{
+                            position: "absolute", left: 12, top: "50%",
+                            transform: "translateY(-50%)",
+                            color: C.textMuted, display: "flex", pointerEvents: "none",
+                        }}
+                    >
             {icon}
           </span>
                 )}
@@ -27,12 +43,18 @@ const Input = ({ label, placeholder, type = "text", value, onChange, icon, requi
                     onChange={onChange}
                     onFocus={() => setFocus(true)}
                     onBlur={() => setFocus(false)}
-                    className={`w-full text-sm font-medium rounded-lg outline-none transition-all duration-150 bg-white text-gray-800 box-border
-            ${icon ? "pl-10 pr-3.5 py-2.5" : "px-3.5 py-2.5"}
-            ${focus
-                        ? "border-[1.5px] border-blue-400 shadow-[0_0_0_3px_#dbeafe]"
-                        : "border-[1.5px] border-gray-200"
-                    }`}
+                    style={{
+                        width: "100%",
+                        fontFamily: "Nunito, sans-serif",
+                        fontSize: 14, fontWeight: 500,
+                        padding: icon ? "10px 14px 10px 40px" : "10px 14px",
+                        border: `1.5px solid ${focus ? C.primary : C.border}`,
+                        borderRadius: 8, outline: "none",
+                        background: C.surface, color: C.text,
+                        boxSizing: "border-box",
+                        boxShadow: focus ? `0 0 0 3px ${C.primaryLight}` : "none",
+                        transition: "all .15s ease",
+                    }}
                 />
             </div>
         </div>
