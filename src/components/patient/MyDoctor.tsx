@@ -2,10 +2,10 @@
 
 import React, { useState } from "react";
 import Card from "@/components/ui/Card";
-import Btn from "@/components/ui/Btn";
+import Btn from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Input from "@/components/ui/Input";
-import { C } from "@/lib/colors";
+import { C } from "@/lib/Colors";
 import { IcCheck, IcLink } from "@/components/ui/Icons";
 
 interface DoctorLink {
@@ -120,7 +120,7 @@ const PatientMyDoctor: React.FC = () => {
                             </div>
                         </Card>
 
-                        <Card style={{ background: C.amberLight, border: `1px solid ${C.amber}44` }}>
+                        <Card style={{ background: C.amberLight, border: `1px solid ${C.amber}` }}>
                             <div className="font-bold text-[14px] mb-2" style={{ color: C.text }}>
                                 ¿Quieres cambiar de médico?
                             </div>
