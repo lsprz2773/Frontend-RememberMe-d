@@ -143,4 +143,67 @@ const PatientDashboard: React.FC = () => {
 
                 <div className="flex flex-col gap-4">
                     <Card>
-                        <div
+                        <div className="font-bold text-[15px] mb-4" style={{ color: C.text }}>
+                            Medicamentos activos
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            {patientDashboardMeds.map((m) => {
+                                const adh = m.total > 0 ? Math.round((m.taken / m.total) * 100) : 0;
+                                const col = adh >= 80 ? C.primary : C.amber;
+                                return (
+                                    <div key={m.id} className="flex items-center gap-3">
+                                        <div
+                                            className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                                            style={{
+                                                background: m.source === "doctor" ? C.primaryLight : C.violetLight,
+                                                color:      m.source === "doctor" ? C.primary      : C.violet,
+                                            }}
+                                        >
+                                            <IcPill size={18} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-1.5 mb-0.5">
+                                                <span className="text-sm font-bold truncate" style={{ color: C.text }}>{m.name}</span>
+                                                <span className="text-xs" style={{ color: C.textMuted }}>{m.dosage}</span>
+                                            </div>
+                                            <ProgressBar value={m.taken} max={m.total} color={col} height={4} />
+                                        </div>
+                                        <div className="text-sm font-bold shrink-0" style={{ color: col }}>{adh}%</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </Card>
+
+                    <Card>
+                        <div className="font-bold text-[15px] mb-4" style={{ color: C.text }}>
+                            Síntomas recientes
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            {recentSymptoms.map((s) => (
+                                <div
+                                    key={s.id}
+                                    className="flex items-center justify-between px-3 py-2 rounded-lg gap-2"
+                                    style={{ background: s.high_severity_alert ? C.coralLight : C.borderLight }}
+                                >
+                                    <div className="min-w-0 flex-1">
+                                        <div className="text-[13px] font-semibold truncate" style={{ color: C.text }}>
+                                            {s.symptom_name}
+                                        </div>
+                                        <div className="text-[11px]" style={{ color: C.textMuted }}>{s.entry_date}</div>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        {s.high_severity_alert && <Badge label="⚠" variant="alert" />}
+                                        <SeverityDot value={s.severity} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default PatientDashboard;
