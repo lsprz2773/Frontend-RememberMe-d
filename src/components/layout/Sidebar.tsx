@@ -27,7 +27,6 @@ const patientNav: NavItem[] = [
 
 const doctorNav: NavItem[] = [
     { id: "dashboard", label: "Panel médico",  icon: <IcHome size={18} />  },
-    { id: "patients",  label: "Mis Pacientes", icon: <IcUsers size={18} /> },
     { id: "profile",   label: "Mi Perfil",     icon: <IcUser size={18} />  },
 ];
 

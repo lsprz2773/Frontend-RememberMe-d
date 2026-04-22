@@ -197,24 +197,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                             {mode === "login" ? "Entrar a mi cuenta" : "Crear cuenta"}
                         </Btn>
 
-                        {mode === "login" && (
-                            <div className="flex gap-2.5">
-                                <Btn full variant="secondary" size="md" onClick={() => onLogin("PATIENT")}>
-                                    Demo Paciente
-                                </Btn>
-                                <Btn full variant="secondary" size="md" onClick={() => onLogin("DOCTOR")}>
-                                    Demo Médico
-                                </Btn>
-                            </div>
-                        )}
+                        {/* Test modes removed for academic project */}
                     </div>
 
-                    <p className="text-xs text-center mt-6 mb-0 leading-relaxed" style={{ color: C.textLight }}>
-                        Al continuar aceptas los{" "}
-                        <span className="cursor-pointer" style={{ color: C.primary }}>Términos de uso</span>
-                        {" "}y la{" "}
-                        <span className="cursor-pointer" style={{ color: C.primary }}>Política de privacidad</span>.
-                    </p>
+                    {/* Terms paragraph removed */}
                 </div>
             </div>
 
