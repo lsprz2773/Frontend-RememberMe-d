@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Sidebar from "@/components/layout/Sidebar";
+import Sidebar from "@/app/";
 import AuthScreen from "@/components/layout/AuthScreen";
 import DoctorDashboard from "@/components/doctor/Dashboard";
 import PatientDetail from "@/components/doctor/PatientDetail";
