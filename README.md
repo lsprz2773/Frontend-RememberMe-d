@@ -1,7 +1,7 @@
-# RememberMed - Frontend 💊
+# RememberMed - Frontend 
 Este repositorio contiene la aplicación frontend del proyecto **RememberMed**, desarrollada con Next.js y React.
 
-## 📖 Resumen del Proyecto
+##  Resumen del Proyecto
 **RememberMed** es una plataforma integral diseñada para facilitar la adherencia a los tratamientos médicos. Su propósito principal es conectar a **Pacientes** y **Médicos** de forma directa:
 - **Pacientes:** Reciben notificaciones de sus tomas, registran síntomas, visualizan su historial y mejoran su adherencia a los tratamientos.
 - **Médicos:** Generan códigos de vinculación, gestionan los medicamentos de sus pacientes vinculados y reciben alertas si el paciente presenta síntomas graves o una adherencia muy baja.
